@@ -912,7 +912,285 @@ svg text{font-family:system-ui,sans-serif}
   </div>
 </div>
 
-<footer>Coinbase CDP API v2 · Coinbase Prime API · Source: docs.cdp.coinbase.com · Generated 2026-07-22</footer>
+<!-- ═══════════════════════════════════════════════════════════
+     SECTION: ENTITY CREATION MECHANICS
+     ═══════════════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-header" style="background:#065f46">
+    <span class="section-tag">Prime API</span>
+    <h2>Entity Creation Mechanics</h2>
+    <p>How each entity type is provisioned, what triggers creation, and what side-effects to expect</p>
+  </div>
+
+  <!-- ORGANIZATION -->
+  <div style="margin-bottom:28px">
+    <div style="background:#1a2e4a;border-radius:6px 6px 0 0;padding:9px 16px;display:flex;align-items:center;gap:12px">
+      <span style="background:#0ea5e9;color:#fff;font-size:.65rem;font-weight:700;padding:2px 8px;border-radius:9999px;letter-spacing:.05em">ORGANIZATION</span>
+      <span style="font-weight:600;color:#e2e8f0;font-size:.9rem">Provisioned by Coinbase — not via API</span>
+    </div>
+    <table class="entity-table">
+      <tr><td class="field-name" style="width:200px">How created</td><td>Onboarding process with Coinbase. Not API-creatable. The Organization is the root tenant and exists before any API credentials are issued.</td></tr>
+      <tr><td class="field-name">What you receive</td><td>An <code>organization_id</code> (bare UUID) and a set of API credentials scoped to that org. All Prime operations reference this ID.</td></tr>
+      <tr><td class="field-name">Side effects</td><td>One or more Entities are provisioned under the Org as part of onboarding. No automated wallet or portfolio creation at this stage.</td></tr>
+      <tr><td class="field-name">Can you create more?</td><td>No. Contact Coinbase account management to add Entities to an existing Organization.</td></tr>
+    </table>
+  </div>
+
+  <!-- ENTITY -->
+  <div style="margin-bottom:28px">
+    <div style="background:#1a2e4a;border-radius:6px 6px 0 0;padding:9px 16px;display:flex;align-items:center;gap:12px">
+      <span style="background:#8b5cf6;color:#fff;font-size:.65rem;font-weight:700;padding:2px 8px;border-radius:9999px;letter-spacing:.05em">ENTITY</span>
+      <span style="font-weight:600;color:#e2e8f0;font-size:.9rem">Provisioned by Coinbase — not via API</span>
+    </div>
+    <table class="entity-table">
+      <tr><td class="field-name" style="width:200px">How created</td><td>Entities represent legal/operational sub-units (e.g. different legal entities or funds) within an Organization. Created by Coinbase during onboarding or account expansion — not via a self-serve API call.</td></tr>
+      <tr><td class="field-name">Key fields set at creation</td><td><code>entity_id</code> (bare UUID), <code>entity_name</code>, parent <code>organization_id</code></td></tr>
+      <tr><td class="field-name">Side effects</td><td>Portfolios can be created under an Entity via API once it exists.</td></tr>
+      <tr><td class="field-name">Can you create more?</td><td>No self-serve. Request additional Entities through your Coinbase relationship manager.</td></tr>
+    </table>
+  </div>
+
+  <!-- PORTFOLIO -->
+  <div style="margin-bottom:28px">
+    <div style="background:#1a2e4a;border-radius:6px 6px 0 0;padding:9px 16px;display:flex;align-items:center;gap:12px">
+      <span style="background:#f59e0b;color:#1c1917;font-size:.65rem;font-weight:700;padding:2px 8px;border-radius:9999px;letter-spacing:.05em">PORTFOLIO</span>
+      <span style="font-weight:600;color:#e2e8f0;font-size:.9rem">Created via Prime UI or API · type is fixed at creation</span>
+    </div>
+    <table class="entity-table">
+      <tr><td class="field-name" style="width:220px">Endpoint</td><td><code>POST /v1/portfolios</code></td></tr>
+      <tr><td class="field-name">Required fields</td><td><code>entity_id</code>, <code>name</code>, <code>portfolio_type</code> (PRIME_TRADING or PRIME_CUSTODY)</td></tr>
+      <tr><td class="field-name">portfolio_type: PRIME_TRADING</td><td>Default trading portfolio. Receives one auto-created <strong>TRADING</strong> wallet per asset when that asset is first traded or navigated to in the UI. Supports active trading, financing, and buying power.</td></tr>
+      <tr><td class="field-name">portfolio_type: PRIME_CUSTODY</td><td>Qualified custodian structure. Receives one auto-created <strong>QC</strong> wallet per asset. MiCA-compliant option available in Europe. Cannot hold TRADING wallets.</td></tr>
+      <tr><td class="field-name">Approval required?</td><td>No consensus approval needed for portfolio creation itself. The portfolio is immediately active on API response.</td></tr>
+      <tr><td class="field-name">Side effects</td><td>No wallets are pre-created. Wallets are auto-provisioned on first asset interaction (trade, navigation, or explicit Create Wallet API call).</td></tr>
+    </table>
+  </div>
+
+  <!-- WALLET -->
+  <div style="margin-bottom:8px">
+    <div style="background:#1a2e4a;border-radius:6px 6px 0 0;padding:9px 16px;display:flex;align-items:center;gap:12px">
+      <span style="background:#10b981;color:#fff;font-size:.65rem;font-weight:700;padding:2px 8px;border-radius:9999px;letter-spacing:.05em">WALLET</span>
+      <span style="font-weight:600;color:#e2e8f0;font-size:.9rem">Endpoint: POST /v1/portfolios/{portfolio_id}/wallets</span>
+    </div>
+    <table class="entity-table">
+      <tr style="background:#0f172a"><td colspan="2" style="padding:6px 12px;font-size:.7rem;font-weight:700;color:#64748b;letter-spacing:.06em;text-transform:uppercase">Required fields for all wallet types</td></tr>
+      <tr><td class="field-name" style="width:160px">name</td><td>string — wallet display identifier</td></tr>
+      <tr><td class="field-name">symbol</td><td>string — asset ticker (e.g. BTC, ETH, USDC). Omitted when wallet_type is ONCHAIN.</td></tr>
+      <tr><td class="field-name">portfolio_id</td><td>Path parameter. Must match the correct portfolio type for the wallet type being created.</td></tr>
+      <tr style="background:#0f172a"><td colspan="2" style="padding:6px 12px;font-size:.7rem;font-weight:700;color:#64748b;letter-spacing:.06em;text-transform:uppercase">Per wallet_type creation rules</td></tr>
+      <tr>
+        <td class="field-name"><span style="background:#dcfce7;color:#166534;padding:1px 6px;border-radius:9999px;font-size:.72rem;font-weight:700">TRADING</span></td>
+        <td><strong>Auto-created</strong> when a user first navigates to an asset in Prime UI, places a first trade, or when Create Wallet is called with <code>type=TRADING</code>. One per asset per portfolio. Portfolio must be PRIME_TRADING. No activity/approval flow — wallet is immediately available. Side effect: corresponding deposit instructions are auto-generated.</td>
+      </tr>
+      <tr>
+        <td class="field-name"><span style="background:#ede9fe;color:#5b21b6;padding:1px 6px;border-radius:9999px;font-size:.72rem;font-weight:700">QC</span></td>
+        <td>Auto-created under same conditions as TRADING but for PRIME_CUSTODY portfolios. One per asset per portfolio. No approval flow. MiCA-compliant variant available in EU.</td>
+      </tr>
+      <tr>
+        <td class="field-name"><span style="background:#fef9c3;color:#713f12;padding:1px 6px;border-radius:9999px;font-size:.72rem;font-weight:700">VAULT</span></td>
+        <td><strong>API-created only</strong> via Create Wallet with <code>type=VAULT</code>. Multiple vault wallets can be created per asset. Response includes an <code>activity_id</code> — the wallet is <strong>not immediately available</strong>. Consensus approval required: an approver must review and accept the activity in the Prime UI before the wallet is active and its Wallet ID is accessible.</td>
+      </tr>
+      <tr>
+        <td class="field-name"><span style="background:#e0f2fe;color:#0369a1;padding:1px 6px;border-radius:9999px;font-size:.72rem;font-weight:700">ONCHAIN</span></td>
+        <td><strong>First wallet of each network family must be created in Prime UI.</strong> The first EVM wallet and first Solana wallet in a portfolio must be UI-created before subsequent ones can be API-created. After that: Create Wallet with <code>type=ONCHAIN</code> and <code>network_family</code> (NETWORK_FAMILY_EVM or NETWORK_FAMILY_SOLANA). No symbol required. Multiple per portfolio.</td>
+      </tr>
+    </table>
+  </div>
+  <div style="background:#1c1917;border:1px solid #292524;border-radius:0 0 6px 6px;padding:10px 16px;margin-bottom:0;font-size:.77rem;color:#a8a29e">
+    <strong style="color:#f5f5f4">VAULT approval flow:</strong> Create Wallet → API returns <code>{ activity_id }</code> → approver opens <code>approval_url</code> in Prime UI → approves → wallet becomes active → call List Wallets or Get Wallet to retrieve the new <code>wallet_id</code>. This same pattern applies to any action that generates an Activity requiring consensus.
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SECTION: TRANSFER MECHANICS
+     ═══════════════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-header" style="background:#1e3a5f">
+    <span class="section-tag">Prime API</span>
+    <h2>Transfer &amp; Order Mechanics</h2>
+    <p>Standard withdrawals, conversions, advanced order types, approval gates, fees, and Travel Rule conditions</p>
+  </div>
+
+  <h3 style="color:#7dd3fc;font-size:.9rem;font-weight:700;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #1e293b">Standard Withdrawal — POST /v1/portfolios/{portfolio_id}/wallets/{wallet_id}/withdrawals</h3>
+  <table class="entity-table" style="margin-bottom:20px">
+    <tr><td class="field-name" style="width:200px">destination_type options</td><td>
+      <strong>DESTINATION_BLOCKCHAIN</strong> — send to an external on-chain address. Requires <code>blockchain_address.address</code> + optional <code>account_identifier</code> (memo/tag) + <code>network</code>.<br>
+      <strong>DESTINATION_PAYMENT_METHOD</strong> — fiat withdrawal to a linked bank (ACH, wire, SEPA). Requires <code>payment_method.payment_method_id</code>.<br>
+      <strong>DESTINATION_WALLET</strong> — internal transfer to another Prime wallet (no on-chain settlement).<br>
+      <strong>DESTINATION_COUNTERPARTY</strong> — send to a pre-registered counterparty. Requires <code>counterparty.counterparty_id</code>.
+    </td></tr>
+    <tr><td class="field-name">Required fields always</td><td><code>amount</code> (whole units string), <code>currency_symbol</code>, <code>destination_type</code>, <code>idempotency_key</code></td></tr>
+    <tr><td class="field-name">Response</td><td><code>activity_id</code>, <code>approval_url</code>, <code>symbol</code>, <code>amount</code>, <code>fee</code> (network fee), <code>destination_type</code>, <code>source_type</code>, <code>transaction_id</code></td></tr>
+    <tr><td class="field-name">Approval gate</td><td>Withdrawals generate an Activity. Many withdrawal types require consensus approval in the Prime UI before funds move. The <code>approval_url</code> in the response links directly to the approval screen. Poll the activity status until COMPLETED.</td></tr>
+    <tr><td class="field-name">Fees</td><td>Network fee (<code>fee</code> field) assessed at submission for blockchain withdrawals. Fiat withdrawals may carry rail-specific fees. Fee is informational in the response — deducted from wallet balance at settlement.</td></tr>
+  </table>
+
+  <h3 style="color:#7dd3fc;font-size:.9rem;font-weight:700;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #1e293b">Conversion (Swap) — POST /v1/portfolios/{portfolio_id}/wallets/{wallet_id}/conversion</h3>
+  <table class="entity-table" style="margin-bottom:20px">
+    <tr><td class="field-name" style="width:200px">Supported pairs</td><td>USD ↔ USDC and USD ↔ PYUSD only. Source wallet must hold the <code>source_symbol</code> asset.</td></tr>
+    <tr><td class="field-name">Required fields</td><td><code>amount</code> (whole units), <code>destination</code> (destination wallet UUID), <code>source_symbol</code>, <code>destination_symbol</code>, <code>idempotency_key</code></td></tr>
+    <tr><td class="field-name">Response</td><td><code>activity_id</code>, <code>source</code>, <code>destination</code>, <code>source_symbol</code>, <code>destination_symbol</code>, <code>amount</code>, <code>transaction_id</code></td></tr>
+    <tr><td class="field-name">Settlement</td><td>1:1 rate, settled internally. No on-chain transaction required — it is a ledger debit/credit between two wallets within the same portfolio.</td></tr>
+  </table>
+
+  <h3 style="color:#7dd3fc;font-size:.9rem;font-weight:700;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #1e293b">Order Types — POST /v1/portfolios/{portfolio_id}/order</h3>
+  <table class="entity-table" style="margin-bottom:8px">
+    <tr style="background:#0f172a"><td colspan="3" style="padding:6px 12px;font-size:.7rem;font-weight:700;color:#64748b;letter-spacing:.06em;text-transform:uppercase">Required for all orders: client_order_id · product_id · side (BUY|SELL) · type · base_quantity OR quote_value</td></tr>
+    <tr style="background:#1e293b">
+      <td style="padding:6px 12px;font-weight:700;color:#94a3b8;font-size:.75rem;width:120px">Type</td>
+      <td style="padding:6px 12px;font-weight:700;color:#94a3b8;font-size:.75rem;width:200px">Additional required fields</td>
+      <td style="padding:6px 12px;font-weight:700;color:#94a3b8;font-size:.75rem">Behaviour</td>
+    </tr>
+    <tr><td class="field-name">MARKET</td><td style="padding:5px 12px;font-size:.77rem;color:#64748b">none</td><td style="padding:5px 12px;font-size:.77rem;color:#475569">Executes immediately at best available price. No price guarantee. Cannot be cancelled once submitted.</td></tr>
+    <tr><td class="field-name">LIMIT</td><td style="padding:5px 12px;font-size:.77rem;color:#64748b"><code>limit_price</code></td><td style="padding:5px 12px;font-size:.77rem;color:#475569">Rests on order book until filled at or better than limit_price. Supports <code>post_only=true</code> to reject if it would immediately match (maker-only). Supports GTC / GTD / IOC / FOK time_in_force.</td></tr>
+    <tr><td class="field-name">STOP_LIMIT</td><td style="padding:5px 12px;font-size:.77rem;color:#64748b"><code>stop_price</code>, <code>limit_price</code></td><td style="padding:5px 12px;font-size:.77rem;color:#475569">Inactive until market reaches stop_price, then becomes a limit order at limit_price.</td></tr>
+    <tr style="background:#fef9c3">
+      <td class="field-name" style="color:#713f12">TWAP</td>
+      <td style="padding:5px 12px;font-size:.77rem;color:#713f12"><code>limit_price</code>, <code>start_time</code>, <code>expiry_time</code></td>
+      <td style="padding:5px 12px;font-size:.77rem;color:#713f12"><strong>Advanced.</strong> Time-Weighted Average Price. Splits order into equal time-sliced child orders over the interval [start_time, expiry_time]. Min notional $100/hr. Targets average market price over the window. Use to reduce market impact for large orders.</td>
+    </tr>
+    <tr style="background:#fef9c3">
+      <td class="field-name" style="color:#713f12">VWAP</td>
+      <td style="padding:5px 12px;font-size:.77rem;color:#713f12"><code>limit_price</code>, <code>start_time</code>, <code>expiry_time</code></td>
+      <td style="padding:5px 12px;font-size:.77rem;color:#713f12"><strong>Advanced.</strong> Volume-Weighted Average Price. Slices order in proportion to historical volume distribution over the window. Min notional $100/hr. Benchmarks against the period VWAP.</td>
+    </tr>
+    <tr style="background:#fef9c3">
+      <td class="field-name" style="color:#713f12">BLOCK</td>
+      <td style="padding:5px 12px;font-size:.77rem;color:#713f12">Negotiated off-book</td>
+      <td style="padding:5px 12px;font-size:.77rem;color:#713f12"><strong>Advanced.</strong> Large off-exchange block trades negotiated bilaterally. Settled as a single fill. Avoids market impact of the lit order book. Suitable for institutional-size positions.</td>
+    </tr>
+    <tr style="background:#fef9c3">
+      <td class="field-name" style="color:#713f12">RFQ</td>
+      <td style="padding:5px 12px;font-size:.77rem;color:#713f12">Counterparty negotiation</td>
+      <td style="padding:5px 12px;font-size:.77rem;color:#713f12"><strong>Advanced.</strong> Request for Quote. Counterparties provide firm quotes; client accepts or rejects before expiry. Execution at agreed price, not market price. Common for illiquid pairs or large notional.</td>
+    </tr>
+    <tr style="background:#fef9c3">
+      <td class="field-name" style="color:#713f12">PEG</td>
+      <td style="padding:5px 12px;font-size:.77rem;color:#713f12"><code>peg_offset_type</code>, <code>offset</code>, <code>wig_level</code></td>
+      <td style="padding:5px 12px;font-size:.77rem;color:#713f12"><strong>Advanced.</strong> Pegged order that dynamically tracks the best bid/ask with a configured offset. Continuously reprices. <code>wig_level</code> controls aggressiveness when top-of-book changes. Useful for passive participation strategies.</td>
+    </tr>
+  </table>
+  <div style="background:#1c1917;border:1px solid #292524;border-radius:0 0 6px 6px;padding:10px 16px;margin-bottom:20px;font-size:.77rem;color:#a8a29e">
+    <strong style="color:#fcd34d">Iceberg orders:</strong> Use <code>display_base_size</code> / <code>display_quote_size</code> on LIMIT orders to show only a portion on the order book; each slice refreshes as it fills. &nbsp;|&nbsp; <strong style="color:#fcd34d">Self-trade prevention:</strong> set <code>stp_id</code> to prevent your own orders crossing each other.
+  </div>
+
+  <h3 style="color:#7dd3fc;font-size:.9rem;font-weight:700;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #1e293b">Order Lifecycle &amp; Fees</h3>
+  <table class="entity-table" style="margin-bottom:20px">
+    <tr><td class="field-name" style="width:200px">Status flow</td><td><code>OPEN</code> → <code>FILLED</code> | <code>CANCELLED</code> | <code>EXPIRED</code> | <code>FAILED</code> | <code>PENDING</code></td></tr>
+    <tr><td class="field-name">Fill fields</td><td><code>filled_quantity</code>, <code>filled_value</code>, <code>average_filled_price</code>, <code>net_average_filled_price</code> (post-commission), <code>commission</code>, <code>exchange_fee</code></td></tr>
+    <tr><td class="field-name">Fee timing</td><td>Fees assessed at fill, not at order placement. For TWAP/VWAP, fees accumulate per child slice as each is filled. Commission deducted from proceeds.</td></tr>
+    <tr><td class="field-name">Cancellation</td><td>MARKET orders cannot be cancelled once submitted. LIMIT/TWAP/VWAP/PEG orders can be cancelled while OPEN. Partial fills cancel the unfilled remainder only.</td></tr>
+    <tr><td class="field-name">Idempotency</td><td><code>client_order_id</code> — a duplicate Create Order request with the same ID returns the original order response without creating a second order.</td></tr>
+  </table>
+
+  <h3 style="color:#7dd3fc;font-size:.9rem;font-weight:700;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #1e293b">Travel Rule Conditions (Blockchain Withdrawals)</h3>
+  <table class="entity-table" style="margin-bottom:0">
+    <tr><td class="field-name" style="width:200px">When required</td><td>Blockchain withdrawals above jurisdictional thresholds (generally ≥$1,000 / €1,000 equivalent, varies by jurisdiction) require Travel Rule data to comply with FATF and local regulation.</td></tr>
+    <tr><td class="field-name">travel_rule_data fields</td><td>
+      <code>beneficiary</code> — name and address of the receiving party<br>
+      <code>originator</code> — name and address of the sending party<br>
+      <code>is_self</code> — true if sending to own external wallet<br>
+      <code>is_intermediary</code> — true if Coinbase Prime is an intermediate VASP<br>
+      <code>opt_out_of_ownership_verification</code> — bypass wallet ownership check (restricted use)<br>
+      <code>attest_verified_wallet_ownership</code> — client attests they have verified the destination wallet belongs to the named beneficiary
+    </td></tr>
+    <tr><td class="field-name">Self-transfer</td><td>Set <code>is_self=true</code> and <code>attest_verified_wallet_ownership=true</code> for withdrawals to your own external cold wallet. Satisfies Travel Rule for self-transfers in most jurisdictions.</td></tr>
+    <tr><td class="field-name">Rejection</td><td>If Travel Rule data is required but absent or invalid, the withdrawal activity is rejected. Rejection reason appears on the Activity record.</td></tr>
+  </table>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SECTION: ENTITY DESTRUCTION / DELETION
+     ═══════════════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-header" style="background:#4c0519">
+    <span class="section-tag">Prime API</span>
+    <h2>Entity Destruction &amp; Deletion Conditions</h2>
+    <p>What can be deleted, what preconditions apply, and what happens to child entities</p>
+  </div>
+
+  <table class="entity-table" style="margin-bottom:20px">
+    <tr style="background:#1e293b">
+      <td style="padding:7px 14px;font-weight:700;color:#94a3b8;font-size:.75rem;width:160px">Entity</td>
+      <td style="padding:7px 14px;font-weight:700;color:#94a3b8;font-size:.75rem;width:120px">Deletable?</td>
+      <td style="padding:7px 14px;font-weight:700;color:#94a3b8;font-size:.75rem;width:240px">Preconditions</td>
+      <td style="padding:7px 14px;font-weight:700;color:#94a3b8;font-size:.75rem">Child / side-effect behaviour</td>
+    </tr>
+    <tr>
+      <td class="field-name">ORGANIZATION</td>
+      <td style="padding:6px 14px;font-size:.77rem"><span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:9999px;font-size:.7rem;font-weight:700">No self-serve</span></td>
+      <td style="padding:6px 14px;font-size:.77rem;color:#475569">Offboarded by Coinbase only. All sub-entities, portfolios, and wallets must be zeroed and closed first.</td>
+      <td style="padding:6px 14px;font-size:.77rem;color:#475569">Entire hierarchy (Entities, Portfolios, Wallets) archived or purged by Coinbase operations team.</td>
+    </tr>
+    <tr>
+      <td class="field-name">ENTITY</td>
+      <td style="padding:6px 14px;font-size:.77rem"><span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:9999px;font-size:.7rem;font-weight:700">No self-serve</span></td>
+      <td style="padding:6px 14px;font-size:.77rem;color:#475569">Contact Coinbase. All portfolios under the Entity must have zero balances and be closed first.</td>
+      <td style="padding:6px 14px;font-size:.77rem;color:#475569">Portfolios and their wallets become inaccessible when the parent Entity is closed.</td>
+    </tr>
+    <tr>
+      <td class="field-name">PORTFOLIO</td>
+      <td style="padding:6px 14px;font-size:.77rem"><span style="background:#fef9c3;color:#713f12;padding:2px 8px;border-radius:9999px;font-size:.7rem;font-weight:700">Limited</span></td>
+      <td style="padding:6px 14px;font-size:.77rem;color:#475569">All wallet balances must be zero. All open orders must be cancelled or filled. No pending Activities. Initiated via Prime UI or account management — no public API delete endpoint.</td>
+      <td style="padding:6px 14px;font-size:.77rem;color:#475569">All child Wallets deactivated. Historical Activity, Order, and Transaction records retained for audit. Deposit addresses become invalid.</td>
+    </tr>
+    <tr>
+      <td class="field-name">WALLET (TRADING / QC)</td>
+      <td style="padding:6px 14px;font-size:.77rem"><span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:9999px;font-size:.7rem;font-weight:700">Not deletable</span></td>
+      <td style="padding:6px 14px;font-size:.77rem;color:#475569">Auto-created system wallets (one per asset per portfolio). Cannot be individually deleted — deactivated only when the parent Portfolio is closed.</td>
+      <td style="padding:6px 14px;font-size:.77rem;color:#475569">Balances must be withdrawn before portfolio closure. Historical balance snapshots retained.</td>
+    </tr>
+    <tr>
+      <td class="field-name">WALLET (VAULT)</td>
+      <td style="padding:6px 14px;font-size:.77rem"><span style="background:#fef9c3;color:#713f12;padding:2px 8px;border-radius:9999px;font-size:.7rem;font-weight:700">Via UI only</span></td>
+      <td style="padding:6px 14px;font-size:.77rem;color:#475569">Balance must be zero (withdraw or transfer all assets first). No pending withdrawal Activities. Closure requires consensus approval in Prime UI.</td>
+      <td style="padding:6px 14px;font-size:.77rem;color:#475569">Wallet ID becomes inactive. Deposit addresses linked to the vault are permanently invalidated — never reuse them. Historical transactions retained.</td>
+    </tr>
+    <tr>
+      <td class="field-name">WALLET (ONCHAIN)</td>
+      <td style="padding:6px 14px;font-size:.77rem"><span style="background:#fef9c3;color:#713f12;padding:2px 8px;border-radius:9999px;font-size:.7rem;font-weight:700">Via UI only</span></td>
+      <td style="padding:6px 14px;font-size:.77rem;color:#475569">Balance must be zero. No pending on-chain transactions. Key decommission handled by Coinbase custody. Consensus approval required.</td>
+      <td style="padding:6px 14px;font-size:.77rem;color:#475569">The blockchain address is permanently retired. Any future sends to that address will not be credited. Wallet ID deactivated.</td>
+    </tr>
+    <tr>
+      <td class="field-name">ORDER</td>
+      <td style="padding:6px 14px;font-size:.77rem"><span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:9999px;font-size:.7rem;font-weight:700">Cancellable</span></td>
+      <td style="padding:6px 14px;font-size:.77rem;color:#475569">Must be in OPEN state. MARKET orders cannot be cancelled once submitted. Partial fills cancel the remaining open quantity only.</td>
+      <td style="padding:6px 14px;font-size:.77rem;color:#475569">Filled portions are irreversible. Cancelled orders retain their record with status CANCELLED. Commission on filled portions is non-refundable.</td>
+    </tr>
+    <tr>
+      <td class="field-name">ACTIVITY</td>
+      <td style="padding:6px 14px;font-size:.77rem"><span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:9999px;font-size:.7rem;font-weight:700">Not deletable</span></td>
+      <td style="padding:6px 14px;font-size:.77rem;color:#475569">Immutable audit records. Can be approved or rejected while pending, but never deleted.</td>
+      <td style="padding:6px 14px;font-size:.77rem;color:#475569">Rejection of a pending Activity cancels the underlying operation (vault creation, withdrawal) but the Activity record is permanently retained.</td>
+    </tr>
+    <tr>
+      <td class="field-name">STAKING_POSITION</td>
+      <td style="padding:6px 14px;font-size:.77rem"><span style="background:#fef9c3;color:#713f12;padding:2px 8px;border-radius:9999px;font-size:.7rem;font-weight:700">Unstake only</span></td>
+      <td style="padding:6px 14px;font-size:.77rem;color:#475569">Cannot be instantly removed. Must call Unstake API. <strong>ETH:</strong> enters UNBONDING; validator queue exit time varies hours to days; partial unstake supported (min 1 ETH); rewards continue during unbonding. <strong>SOL:</strong> full unstake only; activates at epoch boundary; 2–4 day unbonding.</td>
+      <td style="padding:6px 14px;font-size:.77rem;color:#475569">On COMPLETED, staked balance returns to wallet as withdrawable. Historical staking and reward records retained permanently.</td>
+    </tr>
+    <tr>
+      <td class="field-name">DEPOSIT_ADDRESS</td>
+      <td style="padding:6px 14px;font-size:.77rem"><span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:9999px;font-size:.7rem;font-weight:700">Not deletable</span></td>
+      <td style="padding:6px 14px;font-size:.77rem;color:#475569">Cannot be deleted or rotated individually. Invalidated only when the parent Wallet is decommissioned.</td>
+      <td style="padding:6px 14px;font-size:.77rem;color:#475569"><strong style="color:#ef4444">Warning:</strong> unique-type addresses are generated per-payment and should not be reused. Static addresses persist as long as the wallet is active.</td>
+    </tr>
+  </table>
+
+  <div style="background:#1c1917;border:1px solid #7f1d1d;border-radius:6px;padding:14px 18px;font-size:.78rem;line-height:1.6">
+    <strong style="color:#f87171;display:block;margin-bottom:6px">Key irreversibility rules:</strong>
+    <ul style="padding-left:18px;margin:0;color:#e7e5e4">
+      <li>Completed / settled transactions (fills, withdrawals, conversions) are <strong>permanent and non-refundable</strong>.</li>
+      <li>Decommissioned blockchain addresses <strong>must never be reused</strong> — funds sent to an inactive address may be unrecoverable.</li>
+      <li>Activity records are <strong>immutable audit logs</strong> — rejection changes the outcome but not the record.</li>
+      <li>VAULT wallet closures and ONCHAIN wallet decommissions require <strong>consensus approval and cannot be expedited</strong>.</li>
+      <li>ETH validator exit queue is protocol-determined — there is no API override to accelerate unbonding.</li>
+    </ul>
+  </div>
+</div>
+
+<footer>Coinbase CDP API v2 · Coinbase Prime API · Source: docs.cdp.coinbase.com · Updated 2026-07-22 — Creation mechanics, transfer flows, deletion conditions added</footer>
 </div>
 </body>
 </html>
