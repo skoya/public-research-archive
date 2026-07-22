@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coinbase Prime API Simulator</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f172a; --card:#1e293b; --card2:#263348; --border:#334155;
+  --blue:#3b82f6; --red:#ef4444; --green:#22c55e; --amber:#f59e0b;
+  --text:#e2e8f0; --muted:#94a3b8; --faint:#64748b;
+}
+html,body{height:100%}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:14px;line-height:1.5;overflow:hidden}
+header{height:52px;display:flex;align-items:center;gap:14px;padding:0 18px;border-bottom:1px solid var(--border);background:#0b1120}
+header h1{font-size:15px;font-weight:700;color:#f8fafc;letter-spacing:-.01em}
+header .pill{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;background:#6d28d9;color:#ddd6fe;padding:3px 9px;border-radius:4px}
+header .spacer{flex:1}
+header button{background:var(--card);border:1px solid var(--border);color:var(--muted);font-size:12px;padding:6px 12px;border-radius:6px;cursor:pointer}
+header button:hover{color:var(--text);border-color:#475569}
+.layout{display:grid;grid-template-columns:300px 1fr 340px;height:calc(100vh - 52px)}
+.panel{overflow-y:auto;height:100%}
+.left{border-right:1px solid var(--border);background:#0b1120;padding:14px 10px}
+.center{padding:18px 22px;background:var(--bg)}
+.right{border-left:1px solid var(--border);background:#0b1120;padding:14px 12px}
+.panel::-webkit-scrollbar{width:8px}
+.panel::-webkit-scrollbar-thumb{background:#334155;border-radius:4px}
+.side-title{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin:4px 6px 10px}
+/* tree */
+.tree-node{user-select:none}
+.tree-row{display:flex;align-items:center;gap:7px;padding:6px 8px;border-radius:6px;cursor:pointer;font-size:12.5px}
+.tree-row:hover{background:#16213a}
+.tree-row.selected{background:#1d3054;outline:1px solid #2a4a7f}
+.tree-kids{margin-left:16px;border-left:1px solid #1e293b;padding-left:6px}
+.caret{width:12px;font-size:9px;color:var(--faint);flex:0 0 12px;text-align:center;transition:transform .12s}
+.caret.open{transform:rotate(90deg)}
+.node-ico{font-size:12px}
+.dot{width:7px;height:7px;border-radius:50%;flex:0 0 7px}
+.dot.green{background:var(--green)} .dot.yellow{background:var(--amber)} .dot.red{background:var(--red)} .dot.gray{background:#475569}
+.wbadge{font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;letter-spacing:.04em}
+.wb-TRADING{background:#064e3b;color:#6ee7b7}.wb-VAULT{background:#78350f;color:#fde68a}
+.wb-ONCHAIN{background:#0c4a6e;color:#bae6fd}.wb-QC{background:#3b1f6f;color:#c4b5fd}
+.pbadge{font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px}
+.pb-PRIME_TRADING{background:#064e3b;color:#6ee7b7}.pb-PRIME_CUSTODY{background:#3b1f6f;color:#c4b5fd}
+.tree-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#cbd5e1}
+/* center */
+.crumbs{font-size:12px;color:var(--faint);margin-bottom:4px}
+.crumbs b{color:var(--muted);font-weight:600}
+.title-row{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.title-row h2{font-size:19px;font-weight:700;color:#f8fafc}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.idchip{font-family:ui-monospace,monospace;font-size:11px;color:var(--faint);background:var(--card);border:1px solid var(--border);padding:2px 8px;border-radius:5px}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:16px;flex-wrap:wrap}
+.tab{padding:8px 14px;font-size:12.5px;font-weight:600;color:var(--faint);cursor:pointer;border-bottom:2px solid transparent}
+.tab:hover{color:var(--muted)}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px}
+.card h3{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);margin-bottom:12px}
+.endpoint{font-family:ui-monospace,monospace;font-size:11.5px;background:#0b1120;border:1px solid var(--border);border-radius:6px;padding:7px 10px;margin-bottom:14px;color:#7dd3fc;word-break:break-all}
+.endpoint .verb{color:#fbbf24;font-weight:700;margin-right:8px}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:11px;font-weight:600;color:var(--muted)}
+.field label .req{color:var(--red)}
+.field input,.field select{background:#0b1120;border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12.5px;padding:7px 9px;font-family:inherit;width:100%}
+.field input:focus,.field select:focus{outline:none;border-color:var(--blue)}
+.field .hint{font-size:10px;color:var(--faint)}
+.btn{background:var(--blue);border:none;color:#fff;font-size:12.5px;font-weight:600;padding:8px 16px;border-radius:7px;cursor:pointer}
+.btn:hover{background:#2563eb}
+.btn.secondary{background:var(--card2);color:var(--muted);border:1px solid var(--border)}
+.btn.secondary:hover{color:var(--text)}
+.btn.danger{background:#7f1d1d;color:#fca5a5;border:1px solid #991b1b}
+.btn.danger:hover{background:#991b1b}
+.btn.small{font-size:11px;padding:4px 10px}
+.btn.green{background:#15803d}.btn.green:hover{background:#166534}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn:disabled:hover{background:inherit}
+.btn-row{margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+/* response */
+.rr-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+@media(max-width:1500px){.rr-grid{grid-template-columns:1fr}}
+.response-panel{border-radius:8px;overflow:hidden;border:1px solid var(--border)}
+.response-panel .status-line{font-size:11.5px;font-weight:700;padding:7px 12px;letter-spacing:.03em}
+.response-panel.ok .status-line{background:#052e16;color:#4ade80;border-bottom:1px solid #14532d}
+.response-panel.error .status-line{background:#450a0a;color:#f87171;border-bottom:1px solid #7f1d1d}
+.response-panel.req .status-line{background:#172554;color:#93c5fd;border-bottom:1px solid #1e3a8a}
+.response-panel.note .status-line{background:#422006;color:#fbbf24;border-bottom:1px solid #78350f}
+pre.json{background:#0b1120;padding:12px;font-size:11.5px;line-height:1.55;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;overflow-x:auto;white-space:pre-wrap;word-break:break-word;color:#cbd5e1}
+.jk{color:#7dd3fc}.js{color:#a5b4fc}.jn{color:#fbbf24}.jb{color:#f472b6}.jz{color:#64748b}
+/* balances */
+.bal-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:10px}
+.bal-cell{background:#0b1120;border:1px solid var(--border);border-radius:8px;padding:10px 12px}
+.bal-cell .bk{font-size:10px;color:var(--faint);letter-spacing:.03em;font-family:ui-monospace,monospace}
+.bal-cell .bv{font-size:15px;font-weight:700;color:#f1f5f9;font-family:ui-monospace,monospace;margin-top:2px;word-break:break-all}
+.bal-cell.hi{border-color:#1d4ed8}
+.bal-cell.hold .bv{color:#fbbf24}
+/* tables */
+table.list{width:100%;border-collapse:collapse;font-size:12px}
+table.list th{text-align:left;color:var(--faint);font-size:10px;letter-spacing:.06em;text-transform:uppercase;padding:6px 8px;border-bottom:1px solid var(--border)}
+table.list td{padding:7px 8px;border-bottom:1px solid #16213a;vertical-align:middle}
+.st{font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:9999px;letter-spacing:.04em;white-space:nowrap}
+.st-OPEN,.st-PENDING,.st-BONDING,.st-UNBONDING{background:#422006;color:#fbbf24}
+.st-FILLED,.st-ACTIVE,.st-COMPLETED,.st-APPROVED{background:#052e16;color:#4ade80}
+.st-CANCELLED,.st-REJECTED,.st-FAILED,.st-CLOSED{background:#450a0a;color:#f87171}
+/* activity log */
+.act{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:10px}
+.act.pending{border-color:#92400e;box-shadow:0 0 0 1px #92400e inset}
+.act .a-top{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px}
+.act .a-type{font-size:10px;font-weight:700;letter-spacing:.06em;color:#93c5fd}
+.act .a-desc{font-size:12px;color:#cbd5e1;margin-bottom:4px}
+.act .a-meta{font-size:10px;color:var(--faint);font-family:ui-monospace,monospace;word-break:break-all}
+.act .a-url{font-size:10px;color:#60a5fa;word-break:break-all;display:block;margin-top:2px;text-decoration:none}
+.act .a-btns{display:flex;gap:6px;margin-top:8px}
+.banner{background:#422006;border:1px solid #92400e;color:#fde68a;font-size:12px;padding:9px 12px;border-radius:7px;margin-bottom:14px}
+.tip{font-size:11px;color:var(--faint);font-style:italic}
+.kv{display:grid;grid-template-columns:170px 1fr;gap:6px 14px;font-size:12.5px}
+.kv .k{color:var(--faint)}
+.kv .v{color:#e2e8f0;font-family:ui-monospace,monospace;font-size:12px;word-break:break-all}
+.tr-box{border:1px dashed #92400e;border-radius:8px;padding:12px;margin-top:14px;background:#1c1408}
+.tr-box h4{font-size:11px;color:#fbbf24;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px}
+.empty{color:var(--faint);font-size:12.5px;font-style:italic;padding:8px 0}
+</style>
+</head>
+<body>
+<header>
+  <h1>Coinbase Prime API Simulator</h1>
+  <span class="pill">Prime API</span>
+  <span style="font-size:11px;color:var(--faint)">Simulated environment — no real API calls</span>
+  <div class="spacer"></div>
+  <button onclick="resetState()">&#8635; Reset demo state</button>
+</header>
+<div class="layout">
+  <div class="panel left" id="tree"></div>
+  <div class="panel center" id="main"></div>
+  <div class="panel right" id="log"></div>
+</div>
+
+<script>
+'use strict';
+/* ============================== utils ============================== */
+function uuid(){return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c){var r=Math.random()*16|0;return (c==='x'?r:(r&0x3|0x8)).toString(16);});}
+function now(){return new Date().toISOString();}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function fmt(n){if(n===undefined||n===null)return '0';var x=Number(n);return x.toLocaleString('en-US',{maximumFractionDigits:8});}
+function hlJSON(obj){
+  var j=esc(JSON.stringify(obj,null,2));
+  return j.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*")(\s*:)?|\b(true|false)\b|\bnull\b|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?/g,function(m){
+    if(/^"/.test(m)) return /:$/.test(m)?'<span class="jk">'+m.slice(0,-1)+'</span>:':'<span class="js">'+m+'</span>';
+    if(/^(true|false)$/.test(m)) return '<span class="jb">'+m+'</span>';
+    if(/^null$/.test(m)) return '<span class="jz">'+m+'</span>';
+    return '<span class="jn">'+m+'</span>';
+  });
+}
+function randHex(n){var s='';for(var i=0;i<n;i++)s+='0123456789abcdef'[Math.random()*16|0];return s;}
+function randB58(n){var a='123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';var s='';for(var i=0;i<n;i++)s+=a[Math.random()*a.length|0];return s;}
+function fakeAddress(sym){
+  var net=NETWORKS[sym]||'ethereum-mainnet';
+  if(net.indexOf('bitcoin')===0)return 'bc1q'+randHex(38);
+  if(net.indexOf('solana')===0)return randB58(44);
+  return '0x'+randHex(40);
+}
+function val(id){var el=document.getElementById(id);return el?el.value.trim():'';}
+function num(id){var v=val(id);return v===''?NaN:Number(v);}
+
+var PRICES={BTC:60000,ETH:3000,SOL:150,USD:1,USDC:1,PYUSD:1};
+var NETWORKS={BTC:'bitcoin-mainnet',ETH:'ethereum-mainnet',SOL:'solana-mainnet',USDC:'ethereum-mainnet',PYUSD:'ethereum-mainnet',USD:'fiat'};
+var COMMISSION_RATE=0.0015;
+
+/* ============================== state ============================== */
+var STATE=null;
+var UI={sel:null,tab:'overview',open:{},resp:{}};
+
+function newBalance(amount,sym){
+  return {symbol:sym,amount:amount,holds:0,withdrawable_amount:amount,fiat_amount:+(amount*(PRICES[sym]||0)).toFixed(2),
+    bonded_amount:0,bondable_amount:0,unbonding_amount:0,unbondable_amount:0,
+    pending_rewards_amount:0,past_rewards_amount:0,claimable_rewards_amount:0,
+    unvested_amount:0,reserved_amount:0};
+}
+function recalcFiat(w){w.balance.fiat_amount=+(w.balance.amount*(PRICES[w.symbol]||0)).toFixed(2);}
+
+function mkWallet(pid,name,sym,type,status){
+  var w={id:uuid(),portfolio_id:pid,name:name,symbol:sym,type:type,status:status||'ACTIVE',
+    visibility:'VISIBLE',network:{id:(NETWORKS[sym]||'ethereum-mainnet'),type:'mainnet'},created_at:now(),
+    balance:newBalance(0,sym)};
+  if(type==='ONCHAIN'||type==='VAULT')w.address=fakeAddress(sym);
+  return w;
+}
+
+function seedState(){
+  var orgId=uuid(),entId=uuid();
+  var pT={id:uuid(),name:'Acme Trading',portfolio_type:'PRIME_TRADING',entity_id:entId,organization_id:orgId,entity_name:'Acme Prime',status:'ACTIVE',created_at:now()};
+  var pC={id:uuid(),name:'Acme Custody',portfolio_type:'PRIME_CUSTODY',entity_id:entId,organization_id:orgId,entity_name:'Acme Prime',status:'ACTIVE',created_at:now()};
+  var wBTC=mkWallet(pT.id,'BTC Trading Wallet','BTC','TRADING');wBTC.balance=newBalance(5.0,'BTC');
+  var wETH=mkWallet(pT.id,'ETH Trading Wallet','ETH','TRADING');wETH.balance=newBalance(64.0,'ETH');
+  var wUSD=mkWallet(pT.id,'USD Trading Wallet','USD','TRADING');wUSD.balance=newBalance(100000,'USD');
+  var vBTC=mkWallet(pC.id,'BTC Cold Vault','BTC','VAULT');vBTC.balance=newBalance(2.5,'BTC');
+  var vETH=mkWallet(pC.id,'ETH Cold Vault','ETH','VAULT');vETH.balance=newBalance(40.0,'ETH');
+  var wallets=[wBTC,wETH,wUSD,vBTC,vETH];
+  var depositAddresses={};
+  wallets.forEach(function(w){
+    depositAddresses[w.id]=w.symbol==='USD'?[]:[{wallet_id:w.id,address:fakeAddress(w.symbol),network_id:NETWORKS[w.symbol],type:'static',created_at:now()}];
+  });
+  STATE={
+    org:{organization_id:orgId,name:'Acme Corp'},
+    entity:{entity_id:entId,entity_name:'Acme Prime',organization_id:orgId},
+    portfolios:[pT,pC],
+    wallets:wallets,
+    orders:[],withdrawals:[],conversions:[],stakingPositions:[],
+    depositAddresses:depositAddresses,
+    activities:[],idem:{}
+  };
+  UI.sel={type:'wallet',id:wBTC.id};UI.tab='overview';UI.resp={};
+  UI.open={org:true,entity:true};UI.open['p:'+pT.id]=true;UI.open['p:'+pC.id]=true;
+}
+function resetState(){seedState();renderAll();}
+
+/* lookups */
+function getPortfolio(id){return STATE.portfolios.filter(function(p){return p.id===id;})[0];}
+function getWallet(id){return STATE.wallets.filter(function(w){return w.id===id;})[0];}
+function walletsOf(pid){return STATE.wallets.filter(function(w){return w.portfolio_id===pid;});}
+function findWallet(pid,sym){return STATE.wallets.filter(function(w){return w.portfolio_id===pid&&w.symbol===sym&&w.status==='ACTIVE';})[0];}
+function findWalletTyped(pid,sym,type){return STATE.wallets.filter(function(w){return w.portfolio_id===pid&&w.symbol===sym&&w.type===type&&w.status!=='REJECTED'&&w.status!=='CLOSED';})[0];}
+function available(w){return +(w.balance.amount-w.balance.holds).toFixed(8);}
+
+/* ============================== activities ============================== */
+function addActivity(pid,type,desc,status,ref){
+  var a={activity_id:uuid(),portfolio_id:pid,type:type,status:status,description:desc,
+    ui_url:'https://prime.coinbase.com/activities/'+randHex(12),created_at:now(),ref:ref||null};
+  STATE.activities.unshift(a);
+  return a;
+}
+function approveActivity(id){
+  var a=STATE.activities.filter(function(x){return x.activity_id===id;})[0];
+  if(!a||a.status!=='PENDING')return;
+  var r=a.ref||{};
+  if(r.kind==='VAULT_WALLET'){var w=getWallet(r.id);if(w)w.status='ACTIVE';a.status='COMPLETED';}
+  else if(r.kind==='WITHDRAWAL'){
+    var wd=STATE.withdrawals.filter(function(x){return x.transaction_id===r.id;})[0];
+    var ww=wd&&getWallet(wd.wallet_id);
+    if(wd&&ww){var amt=Number(wd.amount);
+      ww.balance.amount=+(ww.balance.amount-amt).toFixed(8);
+      ww.balance.holds=+(ww.balance.holds-amt).toFixed(8);
+      recalcFiat(ww);wd.status='COMPLETED';wd.completed_at=now();}
+    a.status='COMPLETED';
+  }
+  else if(r.kind==='STAKE'){
+    var p=STATE.stakingPositions.filter(function(x){return x.transaction_id===r.id;})[0];
+    if(p&&p.status==='PENDING')p.status='BONDING';
+    a.status='APPROVED';
+  }
+  else if(r.kind==='UNSTAKE'){
+    var p2=STATE.stakingPositions.filter(function(x){return x.transaction_id===r.id;})[0];
+    if(p2&&p2.status==='ACTIVE'){var w2=getWallet(p2.wallet_id);var amt2=r.amount;
+      w2.balance.bonded_amount=+(w2.balance.bonded_amount-amt2).toFixed(8);
+      w2.balance.unbondable_amount=+(w2.balance.unbondable_amount-amt2).toFixed(8);
+      w2.balance.unbonding_amount=+(w2.balance.unbonding_amount+amt2).toFixed(8);
+      p2.unbonding=amt2;p2.status='UNBONDING';}
+    a.status='APPROVED';
+  }
+  else if(r.kind==='WALLET_CLOSURE'){var w3=getWallet(r.id);if(w3)w3.status='CLOSED';a.status='COMPLETED';}
+  else if(r.kind==='PORTFOLIO_CLOSURE'){var p3=getPortfolio(r.id);if(p3){p3.status='CLOSED';walletsOf(p3.id).forEach(function(w){w.status='CLOSED';});}a.status='COMPLETED';}
+  else a.status='APPROVED';
+  renderAll();
+}
+function rejectActivity(id){
+  var a=STATE.activities.filter(function(x){return x.activity_id===id;})[0];
+  if(!a||a.status!=='PENDING')return;
+  var r=a.ref||{};
+  if(r.kind==='VAULT_WALLET'){var w=getWallet(r.id);if(w)w.status='REJECTED';}
+  else if(r.kind==='WITHDRAWAL'){
+    var wd=STATE.withdrawals.filter(function(x){return x.transaction_id===r.id;})[0];
+    var ww=wd&&getWallet(wd.wallet_id);
+    if(wd&&ww){var amt=Number(wd.amount);
+      ww.balance.holds=+(ww.balance.holds-amt).toFixed(8);
+      ww.balance.withdrawable_amount=+(ww.balance.withdrawable_amount+amt).toFixed(8);
+      wd.status='REJECTED';}
+  }
+  else if(r.kind==='STAKE'){
+    var p=STATE.stakingPositions.filter(function(x){return x.transaction_id===r.id;})[0];
+    if(p&&p.status==='PENDING'){var w2=getWallet(p.wallet_id);
+      w2.balance.holds=+(w2.balance.holds-p.amount).toFixed(8);
+      w2.balance.withdrawable_amount=+(w2.balance.withdrawable_amount+p.amount).toFixed(8);
+      p.status='CANCELLED';}
+  }
+  a.status='REJECTED';
+  renderAll();
+}
+/* advance staking lifecycle */
+function advanceStake(txid){
+  var p=STATE.stakingPositions.filter(function(x){return x.transaction_id===txid;})[0];if(!p)return;
+  var w=getWallet(p.wallet_id);
+  if(p.status==='BONDING'){
+    w.balance.holds=+(w.balance.holds-p.amount).toFixed(8);
+    w.balance.bonded_amount=+(w.balance.bonded_amount+p.amount).toFixed(8);
+    w.balance.unbondable_amount=+(w.balance.unbondable_amount+p.amount).toFixed(8);
+    w.balance.pending_rewards_amount=+(w.balance.pending_rewards_amount+p.amount*0.0001).toFixed(8);
+    p.status='ACTIVE';
+  }else if(p.status==='UNBONDING'){
+    var amt=p.unbonding||p.amount;
+    w.balance.unbonding_amount=+(w.balance.unbonding_amount-amt).toFixed(8);
+    w.balance.withdrawable_amount=+(w.balance.withdrawable_amount+amt).toFixed(8);
+    p.amount=+(p.amount-amt).toFixed(8);
+    p.status=p.amount<=0?'COMPLETED':'ACTIVE';
+    p.unbonding=0;
+  }
+  renderAll();
+}
+
+/* ============================== response rendering ============================== */
+function respHTML(endpoint,req,ok,statusLine,res,note){
+  var h='';
+  if(note)h+='<div class="response-panel note" style="margin-bottom:12px"><div class="status-line">'+esc(note)+'</div></div>';
+  h+='<div class="rr-grid">';
+  h+='<div class="response-panel req"><div class="status-line">REQUEST — '+esc(endpoint)+'</div><pre class="json">'+hlJSON(req)+'</pre></div>';
+  h+='<div class="response-panel '+(ok?'ok':'error')+'"><div class="status-line">'+esc(statusLine)+'</div><pre class="json">'+hlJSON(res)+'</pre></div>';
+  h+='</div>';
+  return h;
+}
+function respKey(){return UI.sel.type+':'+UI.sel.id+':'+UI.tab;}
+function showResp(html){
+  UI.resp[respKey()]=html;
+  var el=document.getElementById('resp-area');
+  if(el){el.innerHTML=html;el.scrollIntoView({behavior:'smooth',block:'nearest'});}
+}
+function apiError(endpoint,req,constraint,message,code){
+  return respHTML(endpoint,req,false,(code||'400 Bad Request'),{error:'INVALID_ARGUMENT',message:message,constraint:constraint});
+}
+function restoreResp(){
+  var r=document.getElementById('resp-area');
+  if(r&&UI.resp[respKey()])r.innerHTML=UI.resp[respKey()];
+}
+
+/* ============================== rendering: tree ============================== */
+function renderTree(){
+  var t=document.getElementById('tree');
+  function selIs(ty,id){return UI.sel&&UI.sel.type===ty&&UI.sel.id===id?' selected':'';}
+  var h='<div class="side-title">Entity Hierarchy</div>';
+  h+='<div class="tree-node">';
+  h+='<div class="tree-row'+selIs('org',STATE.org.organization_id)+'" onclick="clickNode(\'org\',\''+STATE.org.organization_id+'\',\'org\')">'+
+     '<span class="caret '+(UI.open.org?'open':'')+'">&#9654;</span><span class="node-ico">&#127963;&#65039;</span><span class="tree-name"><b>'+esc(STATE.org.name)+'</b></span><span class="dot green"></span></div>';
+  if(UI.open.org){
+    h+='<div class="tree-kids">';
+    h+='<div class="tree-row'+selIs('entity',STATE.entity.entity_id)+'" onclick="clickNode(\'entity\',\''+STATE.entity.entity_id+'\',\'entity\')">'+
+       '<span class="caret '+(UI.open.entity?'open':'')+'">&#9654;</span><span class="node-ico">&#127970;</span><span class="tree-name">'+esc(STATE.entity.entity_name)+'</span><span class="dot green"></span></div>';
+    if(UI.open.entity){
+      h+='<div class="tree-kids">';
+      STATE.portfolios.forEach(function(p){
+        var key='p:'+p.id;
+        h+='<div class="tree-row'+selIs('portfolio',p.id)+'" onclick="clickNode(\'portfolio\',\''+p.id+'\',\''+key+'\')">'+
+           '<span class="caret '+(UI.open[key]?'open':'')+'">&#9654;</span><span class="node-ico">&#128193;</span><span class="tree-name">'+esc(p.name)+'</span>'+
+           '<span class="pbadge pb-'+p.portfolio_type+'">'+(p.portfolio_type==='PRIME_TRADING'?'TRADING':'CUSTODY')+'</span>'+
+           '<span class="dot '+(p.status==='ACTIVE'?'green':'red')+'"></span></div>';
+        if(UI.open[key]){
+          h+='<div class="tree-kids">';
+          var ws=walletsOf(p.id);
+          if(!ws.length)h+='<div class="empty" style="padding-left:20px">no wallets</div>';
+          ws.forEach(function(w){
+            var dot=w.status==='ACTIVE'?'green':(w.status==='PENDING'?'yellow':'red');
+            h+='<div class="tree-row'+selIs('wallet',w.id)+'" onclick="selectNode(\'wallet\',\''+w.id+'\')">'+
+               '<span class="caret" style="visibility:hidden">&#9654;</span><span class="node-ico">&#128188;</span>'+
+               '<span class="tree-name">'+esc(w.symbol)+' &middot; '+esc(w.name)+'</span>'+
+               '<span class="wbadge wb-'+w.type+'">'+w.type+'</span><span class="dot '+dot+'"></span></div>';
+          });
+          h+='</div>';
+        }
+      });
+      h+='</div>';
+    }
+    h+='</div>';
+  }
+  h+='</div>';
+  t.innerHTML=h;
+}
+function clickNode(ty,id,openKey){
+  if(UI.sel&&UI.sel.type===ty&&UI.sel.id===id){UI.open[openKey]=!UI.open[openKey];renderTree();return;}
+  UI.open[openKey]=true;
+  selectNode(ty,id);
+}
+function selectNode(ty,id){UI.sel={type:ty,id:id};UI.tab='overview';renderAll();}
+function setTab(t){UI.tab=t;renderMain();}
+
+/* ============================== rendering: main ============================== */
+function renderMain(){
+  var m=document.getElementById('main');
+  if(!UI.sel){m.innerHTML='<div class="empty">Select a node from the tree.</div>';return;}
+  var h='';
+  if(UI.sel.type==='org')h=viewOrg();
+  else if(UI.sel.type==='entity')h=viewEntity();
+  else if(UI.sel.type==='portfolio')h=viewPortfolio();
+  else if(UI.sel.type==='wallet')h=viewWallet();
+  m.innerHTML=h;
+  restoreResp();
+}
+function tabsHTML(tabs){
+  return '<div class="tabs">'+tabs.map(function(t){return '<div class="tab '+(UI.tab===t[0]?'active':'')+'" onclick="setTab(\''+t[0]+'\')">'+t[1]+'</div>';}).join('')+'</div>';
+}
+function respArea(){return '<div id="resp-area"></div>';}
+function fld(id,label,type,value,ph,req,hint){
+  return '<div class="field"><label>'+esc(label)+(req?' <span class="req">*</span>':'')+'</label>'+
+  '<input id="'+id+'" type="'+(type||'text')+'" value="'+esc(value||'')+'" placeholder="'+esc(ph||'')+'"'+(type==='number'?' step="any"':'')+'>'+
+  (hint?'<span class="hint">'+esc(hint)+'</span>':'')+'</div>';
+}
+
+/* ---------- org / entity ---------- */
+function viewOrg(){
+  return '<div class="crumbs">Organization</div><div class="title-row"><h2>'+esc(STATE.org.name)+'</h2><span class="idchip">'+STATE.org.organization_id+'</span></div>'+
+  '<div class="card"><h3>Organization</h3><div class="kv">'+
+  '<span class="k">organization_id</span><span class="v">'+STATE.org.organization_id+'</span>'+
+  '<span class="k">name</span><span class="v">'+esc(STATE.org.name)+'</span>'+
+  '<span class="k">entities</span><span class="v">1</span></div>'+
+  '<p class="tip" style="margin-top:12px">Provisioned by Coinbase during onboarding — not API-creatable, no self-serve deletion. All sub-entities must be zeroed and closed before offboarding.</p></div>'+
+  '<div class="card"><h3>Entities</h3><table class="list"><tr><th>entity_name</th><th>entity_id</th><th></th></tr>'+
+  '<tr><td>'+esc(STATE.entity.entity_name)+'</td><td class="mono" style="font-size:11px">'+STATE.entity.entity_id+'</td>'+
+  '<td><button class="btn small secondary" onclick="selectNode(\'entity\',\''+STATE.entity.entity_id+'\')">Open</button></td></tr></table></div>';
+}
+function viewEntity(){
+  return '<div class="crumbs"><b>'+esc(STATE.org.name)+'</b> / Entity</div><div class="title-row"><h2>'+esc(STATE.entity.entity_name)+'</h2><span class="idchip">'+STATE.entity.entity_id+'</span></div>'+
+  tabsHTML([['overview','Overview'],['portfolios','Portfolios']])+
+  (UI.tab==='portfolios'?viewEntityPortfolios():
+  '<div class="card"><h3>Entity</h3><div class="kv">'+
+  '<span class="k">entity_id</span><span class="v">'+STATE.entity.entity_id+'</span>'+
+  '<span class="k">entity_name</span><span class="v">'+esc(STATE.entity.entity_name)+'</span>'+
+  '<span class="k">organization_id</span><span class="v">'+STATE.entity.organization_id+'</span>'+
+  '<span class="k">portfolios</span><span class="v">'+STATE.portfolios.length+'</span></div>'+
+  '<p class="tip" style="margin-top:12px">Entities are provisioned by Coinbase — no self-serve creation or deletion. Portfolios are created under the entity via API (see Portfolios tab).</p></div>')+respArea();
+}
+function viewEntityPortfolios(){
+  var h='<div class="card"><h3>Create Portfolio</h3>'+
+  '<div class="endpoint"><span class="verb">POST</span>/v1/portfolios</div>'+
+  '<div class="fgrid">'+
+  fld('cp-name','name','text','','e.g. Fund II Trading',true)+
+  '<div class="field"><label>portfolio_type <span class="req">*</span></label><select id="cp-type"><option value="PRIME_TRADING">PRIME_TRADING</option><option value="PRIME_CUSTODY">PRIME_CUSTODY</option></select><span class="hint">Immutable after creation</span></div>'+
+  '</div><div class="btn-row"><button class="btn" onclick="opCreatePortfolio()">Send Request</button></div></div>';
+  h+='<div class="card"><h3>List Portfolios — GET /v1/portfolios</h3><table class="list"><tr><th>name</th><th>type</th><th>status</th><th>wallets</th><th></th></tr>';
+  STATE.portfolios.forEach(function(p){
+    h+='<tr><td>'+esc(p.name)+'</td><td><span class="pbadge pb-'+p.portfolio_type+'">'+p.portfolio_type+'</span></td>'+
+    '<td><span class="st st-'+p.status+'">'+p.status+'</span></td><td>'+walletsOf(p.id).length+'</td>'+
+    '<td><button class="btn small secondary" onclick="selectNode(\'portfolio\',\''+p.id+'\')">Open</button></td></tr>';
+  });
+  h+='</table></div>';
+  return h;
+}
+
+/* ---------- portfolio ---------- */
+function viewPortfolio(){
+  var p=getPortfolio(UI.sel.id);if(!p)return '<div class="empty">Portfolio not found.</div>';
+  var h='<div class="crumbs"><b>'+esc(STATE.org.name)+'</b> / <b>'+esc(STATE.entity.entity_name)+'</b> / Portfolio</div>'+
+  '<div class="title-row"><h2>'+esc(p.name)+'</h2><span class="pbadge pb-'+p.portfolio_type+'">'+p.portfolio_type+'</span>'+
+  '<span class="st st-'+p.status+'">'+p.status+'</span><span class="idchip">'+p.id+'</span></div>'+
+  tabsHTML([['overview','Overview'],['wallets','Wallets'],['orders','Orders'],['activities','Activities']]);
+  if(UI.tab==='wallets')h+=viewPortfolioWallets(p);
+  else if(UI.tab==='orders')h+=viewOrders(p.id);
+  else if(UI.tab==='activities')h+=viewActivitiesTab(p.id);
+  else h+=viewPortfolioOverview(p);
+  return h+respArea();
+}
+function viewPortfolioOverview(p){
+  var ws=walletsOf(p.id);
+  var totalFiat=ws.reduce(function(s,w){return s+(w.balance.fiat_amount||0);},0);
+  var h='<div class="card"><h3>Portfolio</h3><div class="kv">'+
+  '<span class="k">id</span><span class="v">'+p.id+'</span>'+
+  '<span class="k">name</span><span class="v">'+esc(p.name)+'</span>'+
+  '<span class="k">portfolio_type</span><span class="v">'+p.portfolio_type+'</span>'+
+  '<span class="k">entity_id</span><span class="v">'+p.entity_id+'</span>'+
+  '<span class="k">organization_id</span><span class="v">'+p.organization_id+'</span>'+
+  '<span class="k">status</span><span class="v">'+p.status+'</span>'+
+  '<span class="k">total value (USD)</span><span class="v">$'+fmt(totalFiat.toFixed(2))+'</span>'+
+  '<span class="k">commission</span><span class="v">all_in @ 0.0015 (15 bps)</span></div></div>';
+  h+='<div class="card"><h3>Attempt: change portfolio_type (immutable)</h3>'+
+  '<div class="fgrid"><div class="field"><label>new portfolio_type</label><select id="pt-newtype"><option>PRIME_TRADING</option><option>PRIME_CUSTODY</option></select></div></div>'+
+  '<div class="btn-row"><button class="btn secondary" onclick="opChangePortfolioType(\''+p.id+'\')">Send Request</button>'+
+  '<span class="tip">portfolio_type is fixed at creation — this will always return 400.</span></div></div>';
+  h+='<div class="card"><h3>Close Portfolio</h3>'+
+  '<div class="btn-row" style="margin-top:0"><button class="btn danger" onclick="opClosePortfolio(\''+p.id+'\')" '+(p.status!=='ACTIVE'?'disabled':'')+'>Request Closure</button>'+
+  '<span class="tip">Requires: zero balances on all child wallets, no open orders, no pending activities.</span></div></div>';
+  return h;
+}
+function viewPortfolioWallets(p){
+  var h='<div class="card"><h3>Create Wallet</h3>'+
+  '<div class="endpoint"><span class="verb">POST</span>/v1/portfolios/'+p.id+'/wallets</div>'+
+  '<div class="fgrid">'+
+  fld('cw-name','name','text','','e.g. BTC Vault 2',true)+
+  '<div class="field"><label>type <span class="req">*</span></label><select id="cw-type" onchange="onCwType()"><option>TRADING</option><option>QC</option><option>VAULT</option><option>ONCHAIN</option></select></div>'+
+  '<div class="field" id="cw-sym-wrap"><label>symbol <span class="req">*</span></label><select id="cw-sym"><option>BTC</option><option>ETH</option><option>SOL</option><option>USD</option><option>USDC</option><option>PYUSD</option></select><span class="hint">Omitted for ONCHAIN</span></div>'+
+  '<div class="field" id="cw-fam-wrap" style="display:none"><label>network_family <span class="req">*</span></label><select id="cw-fam"><option>NETWORK_FAMILY_EVM</option><option>NETWORK_FAMILY_SOLANA</option></select></div>'+
+  '<div class="field" id="cw-ui-wrap" style="display:none"><label>simulate creation via Prime UI</label><select id="cw-ui"><option value="no">No — API call</option><option value="yes">Yes — created in Prime UI</option></select><span class="hint">First EVM / Solana wallet must be UI-created</span></div>'+
+  '</div><div class="btn-row"><button class="btn" onclick="opCreateWallet(\''+p.id+'\')">Send Request</button></div></div>';
+  h+='<div class="card"><h3>List Wallets — GET /v1/portfolios/{portfolio_id}/wallets</h3>'+
+  '<div class="fgrid" style="margin-bottom:10px;grid-template-columns:200px"><div class="field"><label>filter by type</label><select id="lw-filter" onchange="UI.lwFilter=this.value;renderMain()"><option value="">ALL</option>'+
+  ['TRADING','QC','VAULT','ONCHAIN'].map(function(t){return '<option'+(UI.lwFilter===t?' selected':'')+'>'+t+'</option>';}).join('')+
+  '</select></div></div>'+
+  '<table class="list"><tr><th>name</th><th>symbol</th><th>type</th><th>status</th><th>amount</th><th>actions</th></tr>';
+  walletsOf(p.id).filter(function(w){return !UI.lwFilter||w.type===UI.lwFilter;}).forEach(function(w){
+    h+='<tr><td>'+esc(w.name)+'</td><td class="mono">'+w.symbol+'</td><td><span class="wbadge wb-'+w.type+'">'+w.type+'</span></td>'+
+    '<td><span class="st st-'+w.status+'">'+w.status+'</span></td><td class="mono">'+fmt(w.balance.amount)+'</td>'+
+    '<td><button class="btn small secondary" onclick="selectNode(\'wallet\',\''+w.id+'\')" '+(w.status==='PENDING'?'disabled title="Wallet ID not accessible until the pending Activity is approved"':'')+'>Open</button></td></tr>';
+  });
+  h+='</table></div>';
+  return h;
+}
+function onCwType(){
+  var t=document.getElementById('cw-type').value;
+  document.getElementById('cw-sym-wrap').style.display=t==='ONCHAIN'?'none':'';
+  document.getElementById('cw-fam-wrap').style.display=t==='ONCHAIN'?'':'none';
+  document.getElementById('cw-ui-wrap').style.display=t==='ONCHAIN'?'':'none';
+}
+
+/* ---------- wallet ---------- */
+function viewWallet(){
+  var w=getWallet(UI.sel.id);if(!w)return '<div class="empty">Wallet not found.</div>';
+  var p=getPortfolio(w.portfolio_id);
+  var h='<div class="crumbs"><b>'+esc(STATE.org.name)+'</b> / <b>'+esc(STATE.entity.entity_name)+'</b> / <b>'+esc(p.name)+'</b> / Wallet</div>'+
+  '<div class="title-row"><h2>'+esc(w.name)+'</h2><span class="wbadge wb-'+w.type+'">'+w.type+'</span>'+
+  '<span class="st st-'+w.status+'">'+w.status+'</span><span class="idchip">'+w.id+'</span></div>';
+  if(w.status==='PENDING')h+='<div class="banner">&#9203; Pending consensus approval — this VAULT wallet is not active until its Activity is approved in the right-hand Activity Log.</div>';
+  h+=tabsHTML([['overview','Overview'],['orders','Orders'],['withdrawals','Withdrawals'],['conversions','Conversions'],['staking','Staking'],['deposits','Deposit Addresses']]);
+  if(UI.tab==='orders')h+=viewOrders(w.portfolio_id);
+  else if(UI.tab==='withdrawals')h+=viewWithdrawals(w);
+  else if(UI.tab==='conversions')h+=viewConversions(w);
+  else if(UI.tab==='staking')h+=viewStaking(w);
+  else if(UI.tab==='deposits')h+=viewDeposits(w);
+  else h+=viewWalletOverview(w,p);
+  return h+respArea();
+}
+function viewWalletOverview(w,p){
+  var b=w.balance;
+  var buckets=[['amount',fmt(b.amount),'hi'],['holds',fmt(b.holds),'hold'],['withdrawable_amount',fmt(b.withdrawable_amount),'hi'],
+  ['bonded_amount',fmt(b.bonded_amount)],['bondable_amount',fmt(b.bondable_amount)],['unbonding_amount',fmt(b.unbonding_amount)],
+  ['unbondable_amount',fmt(b.unbondable_amount)],['pending_rewards_amount',fmt(b.pending_rewards_amount)],['past_rewards_amount',fmt(b.past_rewards_amount)],
+  ['claimable_rewards_amount',fmt(b.claimable_rewards_amount)+(w.symbol!=='ETH'?' (ETH only)':'')],['unvested_amount',fmt(b.unvested_amount)],['reserved_amount',fmt(b.reserved_amount)],
+  ['fiat_amount','$'+fmt(b.fiat_amount)]];
+  var h='<div class="card"><h3>Wallet</h3><div class="kv">'+
+  '<span class="k">id</span><span class="v">'+w.id+'</span>'+
+  '<span class="k">name</span><span class="v">'+esc(w.name)+'</span>'+
+  '<span class="k">symbol</span><span class="v">'+w.symbol+'</span>'+
+  '<span class="k">type</span><span class="v">'+w.type+'</span>'+
+  '<span class="k">visibility</span><span class="v">'+w.visibility+'</span>'+
+  '<span class="k">network</span><span class="v">'+w.network.id+' ('+w.network.type+')</span>'+
+  (w.address?'<span class="k">address</span><span class="v">'+w.address+'</span>':'')+
+  '<span class="k">created_at</span><span class="v">'+w.created_at+'</span></div></div>';
+  h+='<div class="card"><h3>Wallet Balance — GET /v1/portfolios/{portfolio_id}/wallets/{wallet_id}/balance</h3><div class="bal-grid">';
+  buckets.forEach(function(x){h+='<div class="bal-cell '+(x[2]||'')+'"><div class="bk">'+x[0]+'</div><div class="bv">'+x[1]+'</div></div>';});
+  h+='</div></div>';
+  h+='<div class="card"><h3>Deletion / Closure</h3><div class="btn-row" style="margin-top:0">';
+  if(w.type==='TRADING'||w.type==='QC'){
+    h+='<button class="btn danger" disabled title="Auto-created system wallet, cannot be deleted individually">Delete Wallet</button>'+
+       '<span class="tip">Auto-created system wallet — deactivated only when the parent portfolio is closed.</span>';
+  }else{
+    h+='<button class="btn danger" onclick="opCloseWallet(\''+w.id+'\')" '+(w.status!=='ACTIVE'?'disabled':'')+'>Request Closure</button>'+
+       '<span class="tip">Requires zero balance, no pending withdrawal activities, and consensus approval.</span>';
+  }
+  h+='</div></div>';
+  return h;
+}
+
+/* ---------- orders ---------- */
+function viewOrders(pid){
+  var p=getPortfolio(pid);
+  var h='<div class="card"><h3>Create Order</h3>'+
+  '<div class="endpoint"><span class="verb">POST</span>/v1/portfolios/'+pid+'/order</div>'+
+  '<div class="fgrid">'+
+  fld('o-coid','client_order_id','text','ord-'+randHex(6),'',true,'Idempotency key — duplicates replay the original order')+
+  '<div class="field"><label>product_id <span class="req">*</span></label><select id="o-product"><option>BTC-USD</option><option>ETH-USD</option><option>SOL-USD</option></select></div>'+
+  '<div class="field"><label>side <span class="req">*</span></label><select id="o-side"><option>BUY</option><option>SELL</option></select></div>'+
+  '<div class="field"><label>order_type <span class="req">*</span></label><select id="o-type" onchange="onOrderType()"><option>MARKET</option><option>LIMIT</option><option>STOP_LIMIT</option><option>TWAP</option><option>VWAP</option><option>BLOCK</option><option>RFQ</option><option>PEG</option></select></div>'+
+  '<div id="of-base_quantity" class="field"><label>base_quantity <span class="req" id="o-bq-req" style="display:none">*</span></label><input id="o-bq" type="number" step="any" placeholder="e.g. 0.5"><span class="hint" id="o-bq-hint">MARKET: provide base_quantity OR quote_value, not both</span></div>'+
+  '<div id="of-quote_value" class="field"><label>quote_value</label><input id="o-qv" type="number" step="any" placeholder="e.g. 10000"><span class="hint">MARKET only — alternative to base_quantity</span></div>'+
+  '<div id="of-limit_price" class="field" style="display:none"><label>limit_price <span class="req">*</span></label><input id="o-lp" type="number" step="any" placeholder="e.g. 60000"></div>'+
+  '<div id="of-stop_price" class="field" style="display:none"><label>stop_price <span class="req">*</span></label><input id="o-sp" type="number" step="any" placeholder="e.g. 58000"></div>'+
+  '<div id="of-start_time" class="field" style="display:none"><label>start_time <span class="req">*</span></label><input id="o-st" type="datetime-local"></div>'+
+  '<div id="of-expiry_time" class="field" style="display:none"><label>expiry_time <span class="req">*</span></label><input id="o-et" type="datetime-local"></div>'+
+  '<div class="field"><label>time_in_force</label><select id="o-tif"><option>GTC</option><option>GTD</option><option>IOC</option><option>FOK</option></select></div>'+
+  '</div><div class="btn-row"><button class="btn" onclick="opCreateOrder(\''+pid+'\')">Send Request</button>'+
+  (p.portfolio_type!=='PRIME_TRADING'?'<span class="tip" style="color:#fbbf24">&#9888; This is a '+p.portfolio_type+' portfolio — order placement will be rejected.</span>':'')+
+  '</div></div>';
+  var orders=STATE.orders.filter(function(o){return o.portfolio_id===pid;});
+  h+='<div class="card"><h3>Orders — GET /v1/portfolios/{portfolio_id}/orders</h3>';
+  if(!orders.length)h+='<div class="empty">No orders yet this session.</div>';
+  else{
+    h+='<table class="list"><tr><th>product</th><th>type</th><th>side</th><th>qty</th><th>status</th><th>avg price</th><th>commission</th><th>actions</th></tr>';
+    orders.forEach(function(o){
+      var actions='';
+      if(o.status==='OPEN'){
+        actions+='<button class="btn small green" onclick="opFillOrder(\''+o.id+'\')">Fill</button> ';
+        if(o.type==='MARKET')actions+='<button class="btn small danger" disabled title="MARKET orders cannot be cancelled once submitted">Cancel</button>';
+        else actions+='<button class="btn small danger" onclick="opCancelOrder(\''+o.id+'\')">Cancel</button>';
+      }else if(o.status==='FILLED'){
+        actions='<button class="btn small danger" disabled title="Order already filled, irreversible">Cancel</button>';
+      }
+      h+='<tr><td class="mono">'+o.product_id+'</td><td>'+o.type+'</td><td>'+o.side+'</td><td class="mono">'+fmt(o.base_quantity)+
+      '</td><td><span class="st st-'+o.status+'">'+o.status+'</span></td><td class="mono">'+(o.average_filled_price?fmt(o.average_filled_price):'—')+
+      '</td><td class="mono">'+(o.commission?fmt(o.commission):'—')+'</td><td style="white-space:nowrap">'+actions+'</td></tr>';
+    });
+    h+='</table>';
+  }
+  h+='</div>';
+  return h;
+}
+var ORDER_EXTRA={
+  MARKET:['quote_value'],
+  LIMIT:['limit_price'],
+  STOP_LIMIT:['limit_price','stop_price'],
+  TWAP:['limit_price','start_time','expiry_time'],
+  VWAP:['limit_price','start_time','expiry_time'],
+  BLOCK:['limit_price'],
+  RFQ:[],
+  PEG:['limit_price']
+};
+function onOrderType(){
+  var t=document.getElementById('o-type').value;
+  ['quote_value','limit_price','stop_price','start_time','expiry_time'].forEach(function(id){
+    var el=document.getElementById('of-'+id);if(el)el.style.display='none';
+  });
+  (ORDER_EXTRA[t]||[]).forEach(function(id){
+    var el=document.getElementById('of-'+id);if(el)el.style.display='';
+  });
+  document.getElementById('o-bq-hint').textContent=t==='MARKET'?'MARKET: provide base_quantity OR quote_value, not both':'';
+  document.getElementById('o-bq-req').style.display=t==='MARKET'?'none':'';
+}
+
+/* ---------- withdrawals ---------- */
+function viewWithdrawals(w){
+  var siblings=STATE.wallets.filter(function(x){return x.id!==w.id&&x.status==='ACTIVE'&&x.symbol===w.symbol;});
+  var h='<div class="card"><h3>Create Withdrawal</h3>'+
+  '<div class="endpoint"><span class="verb">POST</span>/v1/portfolios/'+w.portfolio_id+'/wallets/'+w.id+'/withdrawals</div>'+
+  '<div class="fgrid">'+
+  fld('wd-amt','amount','number','','e.g. 0.5',true,'Whole units of '+w.symbol+' — Travel Rule required above 1000')+
+  fld('wd-cur','currency_symbol','text',w.symbol,'',true)+
+  '<div class="field"><label>destination_type <span class="req">*</span></label><select id="wd-dest" onchange="onWdDest()">'+
+  '<option>DESTINATION_BLOCKCHAIN</option><option>DESTINATION_PAYMENT_METHOD</option><option>DESTINATION_WALLET</option><option>DESTINATION_COUNTERPARTY</option></select></div>'+
+  fld('wd-idem','idempotency_key','text','idem-'+randHex(8),'',true,'Duplicate keys replay the original response')+
+  '<div id="wdf-chain" class="field"><label>blockchain_address.address <span class="req">*</span></label><input id="wd-addr" type="text" placeholder="0x… / bc1q…"></div>'+
+  '<div id="wdf-pm" class="field" style="display:none"><label>payment_method.payment_method_id <span class="req">*</span></label><input id="wd-pm" type="text" placeholder="pm_…"></div>'+
+  '<div id="wdf-wallet" class="field" style="display:none"><label>destination wallet <span class="req">*</span></label><select id="wd-wallet"><option value="">— select —</option>'+
+  siblings.map(function(x){return '<option value="'+x.id+'">'+esc(x.name)+' ('+esc(getPortfolio(x.portfolio_id).name)+')</option>';}).join('')+'</select></div>'+
+  '<div id="wdf-cp" class="field" style="display:none"><label>counterparty.counterparty_id <span class="req">*</span></label><input id="wd-cp" type="text" placeholder="cp_…"></div>'+
+  '</div>'+
+  '<div class="tr-box" id="wd-travel" style="display:none"><h4>&#9888; Travel Rule Required (amount &gt; 1000)</h4><div class="fgrid">'+
+  fld('tr-oname','originator.name','text','','Full legal name',true)+
+  fld('tr-oaddr','originator.address','text','','Street address',true)+
+  fld('tr-oacct','originator.account_number','text','','Account no.',true)+
+  fld('tr-bname','beneficiary.name','text','','Full legal name',true)+
+  fld('tr-baddr','beneficiary.address','text','','Street address',true)+
+  fld('tr-bacct','beneficiary.account_number','text','','Account no.',true)+
+  '</div></div>'+
+  '<div class="btn-row"><button class="btn" onclick="opCreateWithdrawal(\''+w.id+'\')">Send Request</button></div></div>';
+  var wds=STATE.withdrawals.filter(function(x){return x.wallet_id===w.id;});
+  h+='<div class="card"><h3>Withdrawals this session</h3>';
+  if(!wds.length)h+='<div class="empty">No withdrawals yet.</div>';
+  else{h+='<table class="list"><tr><th>amount</th><th>destination</th><th>status</th><th>transaction_id</th></tr>';
+    wds.forEach(function(x){h+='<tr><td class="mono">'+fmt(x.amount)+' '+x.symbol+'</td><td style="font-size:11px">'+x.destination_type.replace('DESTINATION_','')+'</td>'+
+    '<td><span class="st st-'+x.status+'">'+x.status+'</span></td><td class="mono" style="font-size:10px">'+x.transaction_id+'</td></tr>';});
+    h+='</table>';}
+  h+='</div>';
+  setTimeout(hookTravel,0);
+  return h;
+}
+function onWdDest(){
+  var d=val('wd-dest');
+  document.getElementById('wdf-chain').style.display=d==='DESTINATION_BLOCKCHAIN'?'':'none';
+  document.getElementById('wdf-pm').style.display=d==='DESTINATION_PAYMENT_METHOD'?'':'none';
+  document.getElementById('wdf-wallet').style.display=d==='DESTINATION_WALLET'?'':'none';
+  document.getElementById('wdf-cp').style.display=d==='DESTINATION_COUNTERPARTY'?'':'none';
+}
+function hookTravel(){
+  var a=document.getElementById('wd-amt');
+  if(a)a.oninput=function(){var t=document.getElementById('wd-travel');if(t)t.style.display=Number(a.value)>1000?'':'none';};
+}
+
+/* ---------- conversions ---------- */
+function viewConversions(w){
+  var dests=['USDC','PYUSD','USD','BTC','ETH','SOL'];
+  var h='<div class="card"><h3>Create Conversion</h3>'+
+  '<div class="endpoint"><span class="verb">POST</span>/v1/portfolios/'+w.portfolio_id+'/wallets/'+w.id+'/conversion</div>'+
+  '<div class="fgrid">'+
+  fld('cv-amt','amount','number','','e.g. 5000',true)+
+  '<div class="field"><label>source_symbol</label><input id="cv-src" type="text" value="'+w.symbol+'" readonly><span class="hint">Fixed to this wallet\'s asset</span></div>'+
+  '<div class="field"><label>destination_symbol <span class="req">*</span></label><select id="cv-dst">'+dests.map(function(d){return '<option>'+d+'</option>';}).join('')+'</select><span class="hint">Only USD&#8596;USDC and USD&#8596;PYUSD supported</span></div>'+
+  '<div class="field"><label>destination (wallet) <span class="req">*</span></label><select id="cv-wallet"><option value="">— select —</option>'+
+  STATE.wallets.filter(function(x){return x.id!==w.id&&x.status==='ACTIVE';}).map(function(x){return '<option value="'+x.id+'">'+esc(x.symbol)+' — '+esc(x.name)+' ('+esc(getPortfolio(x.portfolio_id).name)+')</option>';}).join('')+
+  '</select><span class="hint">Must be in the same portfolio</span></div>'+
+  fld('cv-idem','idempotency_key','text','idem-'+randHex(8),'',true)+
+  '</div><div class="btn-row"><button class="btn" onclick="opCreateConversion(\''+w.id+'\')">Send Request</button>'+
+  '<span class="tip">1:1 rate, settled internally as a ledger debit/credit.</span></div></div>';
+  var cvs=STATE.conversions.filter(function(c){return c.source===w.id||c.destination===w.id;});
+  h+='<div class="card"><h3>Conversions this session</h3>';
+  if(!cvs.length)h+='<div class="empty">No conversions yet.</div>';
+  else{h+='<table class="list"><tr><th>amount</th><th>pair</th><th>status</th><th>transaction_id</th></tr>';
+    cvs.forEach(function(c){h+='<tr><td class="mono">'+fmt(c.amount)+'</td><td class="mono">'+c.source_symbol+' &rarr; '+c.destination_symbol+'</td><td><span class="st st-COMPLETED">COMPLETED</span></td><td class="mono" style="font-size:10px">'+c.transaction_id+'</td></tr>';});
+    h+='</table>';}
+  h+='</div>';
+  return h;
+}
+
+/* ---------- staking ---------- */
+function viewStaking(w){
+  var h='';
+  if(w.symbol!=='ETH'&&w.symbol!=='SOL'){
+    h+='<div class="card"><h3>Staking</h3><div class="empty">Staking is available for ETH and SOL wallets only. This wallet holds '+w.symbol+'.</div></div>';
+  }else{
+    var isSOL=w.symbol==='SOL';
+    h+='<div class="card"><h3>Create Stake</h3>'+
+    '<div class="endpoint"><span class="verb">POST</span>/v1/portfolios/'+w.portfolio_id+'/wallets/'+w.id+'/staking/initiate</div>'+
+    '<div class="fgrid">'+
+    (isSOL?
+      '<div class="field"><label>amount <span class="req">*</span></label><input id="sk-amt" type="number" step="any" value="'+w.balance.withdrawable_amount+'" readonly><span class="hint">SOL: full stake only — entire withdrawable balance</span></div>':
+      fld('sk-amt','amount','number','','min 32 ETH',true,'ETH: minimum 32 ETH per stake, cannot exceed withdrawable_amount'))+
+    '</div><div class="btn-row"><button class="btn" onclick="opCreateStake(\''+w.id+'\')">Send Request</button></div></div>';
+    h+='<div class="card"><h3>Create Unstake</h3>'+
+    '<div class="endpoint"><span class="verb">POST</span>/v1/portfolios/'+w.portfolio_id+'/wallets/'+w.id+'/staking/unstake</div>'+
+    '<div class="fgrid">'+
+    '<div class="field"><label>position <span class="req">*</span></label><select id="us-pos"><option value="">— select —</option>'+
+    STATE.stakingPositions.filter(function(p){return p.wallet_id===w.id;}).map(function(p){return '<option value="'+p.transaction_id+'">'+fmt(p.amount)+' '+p.asset+' — '+p.status+'</option>';}).join('')+
+    '</select></div>'+
+    (isSOL?'<div class="field"><label>amount</label><input id="us-amt" type="number" readonly placeholder="full unstake only"><span class="hint">SOL: full unstake only</span></div>':
+      fld('us-amt','amount','number','','min 1 ETH',true,'ETH: partial unstake, minimum 1 ETH'))+
+    '</div><div class="btn-row"><button class="btn" onclick="opCreateUnstake(\''+w.id+'\')">Send Request</button>'+
+    '<span class="tip">Only positions in ACTIVE state can be unstaked.</span></div></div>';
+  }
+  var poss=STATE.stakingPositions.filter(function(p){return p.wallet_id===w.id;});
+  h+='<div class="card"><h3>Staking Positions</h3>';
+  if(!poss.length)h+='<div class="empty">No staking positions.</div>';
+  else{
+    h+='<table class="list"><tr><th>amount</th><th>asset</th><th>status</th><th>transaction_id</th><th>actions</th></tr>';
+    poss.forEach(function(p){
+      var act='';
+      if(p.status==='BONDING')act='<button class="btn small green" onclick="advanceStake(\''+p.transaction_id+'\')">Advance &rarr; ACTIVE</button>';
+      else if(p.status==='UNBONDING')act='<button class="btn small green" onclick="advanceStake(\''+p.transaction_id+'\')">Advance &rarr; COMPLETED</button>';
+      else act='<button class="btn small danger" disabled title="Staking positions cannot be deleted — only Unstake is available, and only when status = ACTIVE">Delete</button>';
+      h+='<tr><td class="mono">'+fmt(p.amount)+'</td><td>'+p.asset+'</td><td><span class="st st-'+p.status+'">'+p.status+'</span></td>'+
+      '<td class="mono" style="font-size:10px">'+p.transaction_id+'</td><td>'+act+'</td></tr>';
+    });
+    h+='</table>';
+  }
+  h+='<p class="tip" style="margin-top:8px">Lifecycle: PENDING &rarr; BONDING &rarr; ACTIVE &rarr; UNBONDING &rarr; COMPLETED. Approve the pending Activity to advance PENDING &rarr; BONDING.</p></div>';
+  return h;
+}
+
+/* ---------- deposit addresses ---------- */
+function viewDeposits(w){
+  var h='<div class="card"><h3>Get Deposit Instructions</h3>'+
+  '<div class="endpoint"><span class="verb">GET</span>/v1/portfolios/'+w.portfolio_id+'/wallets/'+w.id+'/deposit_instructions</div>'+
+  '<div class="fgrid"><div class="field"><label>deposit_type</label><select id="da-type"><option value="static">static — permanent per wallet</option><option value="unique">unique — generated per request</option></select></div></div>'+
+  '<div class="btn-row"><button class="btn" onclick="opGetDeposit(\''+w.id+'\')">Send Request</button></div></div>';
+  var das=STATE.depositAddresses[w.id]||[];
+  h+='<div class="card"><h3>Provisioned Addresses</h3>';
+  if(!das.length)h+='<div class="empty">'+(w.symbol==='USD'?'Fiat wallets use bank wire details — no blockchain addresses.':'No addresses yet.')+'</div>';
+  else{
+    h+='<table class="list"><tr><th>address</th><th>network</th><th>type</th><th></th></tr>';
+    das.forEach(function(d){h+='<tr><td class="mono" style="font-size:10.5px;word-break:break-all">'+d.address+'</td><td class="mono" style="font-size:11px">'+d.network_id+'</td><td><span class="st '+(d.type==='static'?'st-ACTIVE':'st-OPEN')+'">'+d.type+'</span></td>'+
+    '<td><button class="btn small danger" disabled title="Cannot be deleted; invalidated only when parent wallet is decommissioned">Delete</button></td></tr>';});
+    h+='</table>';
+  }
+  h+='</div>';
+  return h;
+}
+
+/* ---------- activities tab ---------- */
+function viewActivitiesTab(pid){
+  var acts=STATE.activities.filter(function(a){return a.portfolio_id===pid;});
+  var h='<div class="card"><h3>Activities — GET /v1/portfolios/{portfolio_id}/activities</h3>';
+  if(!acts.length)h+='<div class="empty">No activities generated for this portfolio yet.</div>';
+  else{
+    h+='<table class="list"><tr><th>type</th><th>description</th><th>status</th><th>actions</th></tr>';
+    acts.forEach(function(a){
+      var act;
+      if(a.status==='PENDING')act='<button class="btn small green" onclick="approveActivity(\''+a.activity_id+'\')">Approve</button> <button class="btn small danger" onclick="rejectActivity(\''+a.activity_id+'\')">Reject</button>';
+      else act='<button class="btn small danger" disabled title="Immutable audit record">Delete</button>';
+      h+='<tr><td style="font-size:10.5px;font-weight:700;color:#93c5fd">'+a.type+'</td><td style="font-size:11.5px">'+esc(a.description)+'</td>'+
+      '<td><span class="st st-'+a.status+'">'+a.status+'</span></td><td style="white-space:nowrap">'+act+'</td></tr>';
+    });
+    h+='</table>';
+  }
+  h+='</div>';
+  return h;
+}
+
+/* ============================== activity log (right) ============================== */
+function renderLog(){
+  var el=document.getElementById('log');
+  var h='<div class="side-title">Activity Log ('+STATE.activities.length+')</div>';
+  if(!STATE.activities.length)h+='<div class="empty" style="padding:0 6px">No Activities yet. Actions that require consensus (VAULT creation, withdrawals, staking, closures) generate Activities here.</div>';
+  STATE.activities.forEach(function(a){
+    h+='<div class="act '+(a.status==='PENDING'?'pending':'')+'">'+
+    '<div class="a-top"><span class="a-type">'+a.type+'</span><span class="st st-'+a.status+'">'+a.status+'</span></div>'+
+    '<div class="a-desc">'+esc(a.description)+'</div>'+
+    '<div class="a-meta">'+a.activity_id+'</div>'+
+    '<a class="a-url" href="#" onclick="return false" title="Simulated Prime UI approval link">'+a.ui_url+'</a>'+
+    (a.status==='PENDING'?'<div class="a-btns"><button class="btn small green" onclick="approveActivity(\''+a.activity_id+'\')">Approve</button>'+
+    '<button class="btn small danger" onclick="rejectActivity(\''+a.activity_id+'\')">Reject</button></div>':'')+
+    '</div>';
+  });
+  el.innerHTML=h;
+}
+function renderAll(){renderTree();renderMain();renderLog();}
+
+/* ============================== operations ============================== */
+/* -- portfolio -- */
+function opCreatePortfolio(){
+  var ep='POST /v1/portfolios';
+  var req={entity_id:STATE.entity.entity_id,name:val('cp-name'),portfolio_type:val('cp-type')};
+  if(!req.name){showResp(apiError(ep,req,'missing_required_field','name is required'));return;}
+  var p={id:uuid(),name:req.name,portfolio_type:req.portfolio_type,entity_id:STATE.entity.entity_id,
+    organization_id:STATE.org.organization_id,entity_name:STATE.entity.entity_name,status:'ACTIVE',created_at:now()};
+  STATE.portfolios.push(p);
+  UI.open['p:'+p.id]=true;
+  showResp(respHTML(ep,req,true,'201 Created',{portfolio:{id:p.id,name:p.name,portfolio_type:p.portfolio_type,entity_id:p.entity_id,organization_id:p.organization_id,entity_name:p.entity_name,created_at:p.created_at}}));
+  renderTree();
+}
+function opChangePortfolioType(pid){
+  var p=getPortfolio(pid);
+  showResp(apiError('PATCH /v1/portfolios/'+pid,{portfolio_type:val('pt-newtype')},
+    'portfolio_type_immutable','portfolio_type is fixed at creation and cannot be changed. Current type: '+p.portfolio_type));
+}
+function opClosePortfolio(pid){
+  var p=getPortfolio(pid);
+  var ep='POST /v1/portfolios/'+pid+'/close';
+  var req={portfolio_id:pid};
+  var ws=walletsOf(pid).filter(function(w){return w.status!=='CLOSED'&&w.status!=='REJECTED';});
+  var withBal=ws.filter(function(w){return w.balance.amount>0;})[0];
+  if(withBal){showResp(apiError(ep,req,'portfolio_nonzero_balance','Cannot close portfolio: wallet "'+withBal.name+'" holds a non-zero balance ('+fmt(withBal.balance.amount)+' '+withBal.symbol+'). All wallet balances must be zero.','409 Conflict'));return;}
+  if(STATE.orders.filter(function(o){return o.portfolio_id===pid&&o.status==='OPEN';}).length){
+    showResp(apiError(ep,req,'portfolio_open_orders','Cannot close portfolio: open orders exist. Cancel or fill all orders first.','409 Conflict'));return;}
+  if(STATE.activities.filter(function(a){return a.portfolio_id===pid&&a.status==='PENDING';}).length){
+    showResp(apiError(ep,req,'portfolio_pending_activities','Cannot close portfolio: pending Activities must be approved or rejected first.','409 Conflict'));return;}
+  var a=addActivity(pid,'PORTFOLIO_CLOSURE','Close portfolio "'+p.name+'"','PENDING',{kind:'PORTFOLIO_CLOSURE',id:pid});
+  showResp(respHTML(ep,req,true,'200 OK — pending consensus approval',{activity_id:a.activity_id,approval_url:a.ui_url,status:'PENDING'}));
+  renderLog();
+}
+
+/* -- wallet create / close -- */
+function opCreateWallet(pid){
+  var p=getPortfolio(pid);
+  var ep='POST /v1/portfolios/'+pid+'/wallets';
+  var type=val('cw-type'),name=val('cw-name'),sym=val('cw-sym');
+  var req={name:name,type:type};
+  if(type!=='ONCHAIN')req.symbol=sym;else req.network_family=val('cw-fam');
+  if(!name){showResp(apiError(ep,req,'missing_required_field','name is required'));return;}
+  if(type==='TRADING'&&p.portfolio_type==='PRIME_CUSTODY'){
+    showResp(apiError(ep,req,'wallet_type_portfolio_mismatch','TRADING wallets cannot be created in a PRIME_CUSTODY portfolio'));return;}
+  if(type==='QC'&&p.portfolio_type==='PRIME_TRADING'){
+    showResp(apiError(ep,req,'wallet_type_portfolio_mismatch','QC wallets cannot be created in a PRIME_TRADING portfolio'));return;}
+  if((type==='TRADING'||type==='QC')&&findWalletTyped(pid,sym,type)){
+    showResp(apiError(ep,req,'wallet_one_per_asset','A '+type+' wallet for '+sym+' already exists in this portfolio (one per asset)','409 Conflict'));return;}
+  if(type==='ONCHAIN'){
+    var fam=val('cw-fam');
+    var famOf=function(w){return w.network.id.indexOf('solana')===0?'NETWORK_FAMILY_SOLANA':'NETWORK_FAMILY_EVM';};
+    var hasFam=STATE.wallets.some(function(w){return w.portfolio_id===pid&&w.type==='ONCHAIN'&&w.status==='ACTIVE'&&famOf(w)===fam;});
+    var viaUI=val('cw-ui')==='yes';
+    if(!hasFam&&!viaUI){
+      showResp(apiError(ep,req,'onchain_first_wallet_ui_only','The first '+(fam==='NETWORK_FAMILY_SOLANA'?'Solana':'EVM')+' ONCHAIN wallet in a portfolio cannot be created via API — create it via the Prime UI first. (In this simulator, set "simulate creation via Prime UI" to Yes, then subsequent ONCHAIN wallets can be API-created.)','403 Forbidden'));return;}
+    var osym=fam==='NETWORK_FAMILY_SOLANA'?'SOL':'ETH';
+    var w=mkWallet(pid,name,osym,'ONCHAIN','ACTIVE');
+    STATE.wallets.push(w);
+    STATE.depositAddresses[w.id]=[{wallet_id:w.id,address:w.address,network_id:w.network.id,type:'static',created_at:now()}];
+    showResp(respHTML(ep,req,true,'201 Created'+(viaUI?' (via Prime UI)':''),{wallet:{id:w.id,name:w.name,type:'ONCHAIN',network_family:fam,address:w.address,created_at:w.created_at}}));
+    renderTree();return;
+  }
+  if(type==='VAULT'){
+    var wv=mkWallet(pid,name,sym,'VAULT','PENDING');
+    STATE.wallets.push(wv);
+    STATE.depositAddresses[wv.id]=[];
+    var a=addActivity(pid,'WALLET_CREATION','Create VAULT wallet "'+name+'" ('+sym+')','PENDING',{kind:'VAULT_WALLET',id:wv.id});
+    showResp(respHTML(ep,req,true,'201 Created — consensus approval required',
+      {activity_id:a.activity_id,approval_url:a.ui_url,status:'PENDING_APPROVAL',
+       note:'wallet_id is not accessible until the activity is approved in the Prime UI'},
+      'VAULT creation requires consensus — approve the Activity in the right-hand log to activate the wallet.'));
+    renderTree();renderLog();return;
+  }
+  var wt=mkWallet(pid,name,sym,type,'ACTIVE');
+  STATE.wallets.push(wt);
+  STATE.depositAddresses[wt.id]=sym==='USD'?[]:[{wallet_id:wt.id,address:fakeAddress(sym),network_id:NETWORKS[sym],type:'static',created_at:now()}];
+  showResp(respHTML(ep,req,true,'201 Created',{wallet:{id:wt.id,name:wt.name,symbol:wt.symbol,type:wt.type,network:wt.network,created_at:wt.created_at},note:'Deposit instructions auto-generated'}));
+  renderTree();
+}
+function opCloseWallet(wid){
+  var w=getWallet(wid);
+  var ep='POST /v1/portfolios/'+w.portfolio_id+'/wallets/'+wid+'/close';
+  var req={wallet_id:wid};
+  if(w.balance.amount>0){
+    showResp(apiError(ep,req,'wallet_nonzero_balance','Cannot close wallet: balance is '+fmt(w.balance.amount)+' '+w.symbol+'. Withdraw or transfer all assets first.','409 Conflict'));return;}
+  if(STATE.withdrawals.filter(function(x){return x.wallet_id===wid&&x.status==='PENDING';}).length){
+    showResp(apiError(ep,req,'wallet_pending_withdrawals','Cannot close wallet: pending withdrawal Activities must be resolved first.','409 Conflict'));return;}
+  var a=addActivity(w.portfolio_id,'WALLET_CLOSURE','Close '+w.type+' wallet "'+w.name+'"','PENDING',{kind:'WALLET_CLOSURE',id:wid});
+  showResp(respHTML(ep,req,true,'200 OK — pending consensus approval',{activity_id:a.activity_id,approval_url:a.ui_url,status:'PENDING'}));
+  renderLog();
+}
+
+/* -- orders -- */
+function orderResponse(o){
+  return {order:{id:o.id,client_order_id:o.client_order_id,portfolio_id:o.portfolio_id,product_id:o.product_id,side:o.side,
+    type:o.type,status:o.status,product_type:o.product_type,base_quantity:String(o.base_quantity),
+    limit_price:o.limit_price!=null?String(o.limit_price):null,stop_price:o.stop_price!=null?String(o.stop_price):null,
+    time_in_force:o.time_in_force,start_time:o.start_time,expiry_time:o.expiry_time,
+    filled_quantity:String(o.filled_quantity),filled_value:String(o.filled_value),
+    average_filled_price:o.average_filled_price!=null?String(o.average_filled_price):null,
+    net_average_filled_price:o.net_average_filled_price!=null?String(o.net_average_filled_price):null,
+    commission:o.commission!=null?String(o.commission):null,exchange_fee:o.exchange_fee!=null?String(o.exchange_fee):null,
+    created_at:o.created_at}};
+}
+function opCreateOrder(pid){
+  var p=getPortfolio(pid);
+  var ep='POST /v1/portfolios/'+pid+'/order';
+  var type=val('o-type'),side=val('o-side'),product=val('o-product'),coid=val('o-coid');
+  var bq=num('o-bq'),qv=num('o-qv'),lp=num('o-lp'),sp=num('o-sp');
+  var st=val('o-st'),et=val('o-et'),tif=val('o-tif');
+  var parts=product.split('-');var base=parts[0],quote=parts[1];
+  var req={client_order_id:coid,product_id:product,side:side,type:type,time_in_force:tif};
+  if(!isNaN(bq))req.base_quantity=String(bq);
+  if(!isNaN(qv))req.quote_value=String(qv);
+  if(!isNaN(lp))req.limit_price=String(lp);
+  if(!isNaN(sp))req.stop_price=String(sp);
+  if(st)req.start_time=st;
+  if(et)req.expiry_time=et;
+  if(p.portfolio_type!=='PRIME_TRADING'){
+    showResp(apiError(ep,req,'portfolio_type_not_tradable','Orders can only be placed against PRIME_TRADING portfolios. This portfolio is '+p.portfolio_type+'.'));return;}
+  if(!coid){showResp(apiError(ep,req,'missing_required_field','client_order_id is required'));return;}
+  var dup=STATE.orders.filter(function(o){return o.client_order_id===coid;})[0];
+  if(dup){
+    showResp(respHTML(ep,req,true,'200 OK — idempotent replay',orderResponse(dup),'Duplicate client_order_id — original order returned, no new order created.'));return;}
+  if(type==='MARKET'){
+    if(!isNaN(bq)&&!isNaN(qv)){showResp(apiError(ep,req,'market_base_or_quote','MARKET orders accept base_quantity OR quote_value, not both'));return;}
+    if(isNaN(bq)&&isNaN(qv)){showResp(apiError(ep,req,'missing_required_field','MARKET orders require base_quantity or quote_value'));return;}
+  }else if(isNaN(bq)||bq<=0){
+    showResp(apiError(ep,req,'missing_required_field',type+' orders require base_quantity'));return;}
+  if(['LIMIT','STOP_LIMIT','TWAP','VWAP','BLOCK','PEG'].indexOf(type)>=0&&(isNaN(lp)||lp<=0)){
+    showResp(apiError(ep,req,'missing_required_field',type+' orders require limit_price'));return;}
+  if(type==='STOP_LIMIT'&&(isNaN(sp)||sp<=0)){
+    showResp(apiError(ep,req,'stop_limit_requires_both','STOP_LIMIT orders require both stop_price and limit_price'));return;}
+  if(type==='TWAP'||type==='VWAP'){
+    if(!st||!et){showResp(apiError(ep,req,'missing_required_field',type+' orders require start_time and expiry_time'));return;}
+    var durH=(new Date(et)-new Date(st))/3600000;
+    if(!(durH>0)){showResp(apiError(ep,req,'invalid_time_window','expiry_time must be after start_time'));return;}
+    var perHr=bq*lp/durH;
+    if(perHr<100){showResp(apiError(ep,req,'twap_vwap_min_notional',type+' minimum notional is $100/hr. Requested: $'+fmt(perHr.toFixed(2))+'/hr over '+durH.toFixed(1)+'h'));return;}
+  }
+  var price=isNaN(lp)?PRICES[base]:lp;
+  var qty=!isNaN(bq)?bq:+(qv/price).toFixed(8);
+  var holdWallet,holdAmt;
+  if(side==='BUY'){
+    holdWallet=findWallet(pid,quote);
+    holdAmt=+(qty*price*(1+COMMISSION_RATE)).toFixed(8);
+    if(!holdWallet){showResp(apiError(ep,req,'insufficient_funds','No '+quote+' wallet exists in this portfolio to fund a BUY order (zero balance)'));return;}
+  }else{
+    holdWallet=findWallet(pid,base);
+    holdAmt=qty;
+    if(!holdWallet){showResp(apiError(ep,req,'insufficient_funds','No '+base+' wallet exists in this portfolio to fund a SELL order (zero balance)'));return;}
+  }
+  if(available(holdWallet)<holdAmt){
+    showResp(apiError(ep,req,'insufficient_funds','Insufficient funds: required '+fmt(holdAmt)+' '+holdWallet.symbol+', available '+fmt(available(holdWallet))+' (amount − holds)'));return;}
+  holdWallet.balance.holds=+(holdWallet.balance.holds+holdAmt).toFixed(8);
+  holdWallet.balance.withdrawable_amount=Math.max(0,+(holdWallet.balance.withdrawable_amount-holdAmt).toFixed(8));
+  var o={id:uuid(),client_order_id:coid,portfolio_id:pid,user_id:'user-'+randHex(8),product_id:product,side:side,type:type,
+    status:'OPEN',product_type:'SPOT',base_quantity:qty,quote_value:isNaN(qv)?null:qv,limit_price:isNaN(lp)?null:lp,
+    stop_price:isNaN(sp)?null:sp,time_in_force:tif,start_time:st||null,expiry_time:et||null,
+    filled_quantity:0,filled_value:0,average_filled_price:null,net_average_filled_price:null,commission:null,exchange_fee:null,
+    created_at:now(),hold_wallet:holdWallet.id,hold_amt:holdAmt,fill_price:price};
+  STATE.orders.unshift(o);
+  var noteMsg=type==='MARKET'?'MARKET order is OPEN — it cannot be cancelled. Hold placed on '+holdWallet.symbol+' wallet. Use Fill to simulate execution.':'Order OPEN — '+fmt(holdAmt)+' '+holdWallet.symbol+' moved to holds.';
+  UI.resp[respKey()]=respHTML(ep,req,true,'201 Created',orderResponse(o),noteMsg);
+  renderMain();
+}
+function opFillOrder(oid){
+  var o=STATE.orders.filter(function(x){return x.id===oid;})[0];
+  if(!o||o.status!=='OPEN')return;
+  var parts=o.product_id.split('-');var base=parts[0],quote=parts[1];
+  var pid=o.portfolio_id,price=o.fill_price,qty=o.base_quantity;
+  var gross=+(qty*price).toFixed(8);
+  var commission=+(gross*COMMISSION_RATE).toFixed(8);
+  var hw=getWallet(o.hold_wallet);
+  hw.balance.holds=+(hw.balance.holds-o.hold_amt).toFixed(8);
+  if(o.side==='BUY'){
+    var cost=+(gross+commission).toFixed(8);
+    hw.balance.amount=+(hw.balance.amount-cost).toFixed(8);
+    hw.balance.withdrawable_amount=Math.max(0,+(hw.balance.amount-hw.balance.holds).toFixed(8));
+    recalcFiat(hw);
+    var bw=findWallet(pid,base);
+    if(!bw){bw=mkWallet(pid,base+' Trading Wallet',base,'TRADING');STATE.wallets.push(bw);
+      STATE.depositAddresses[bw.id]=[{wallet_id:bw.id,address:fakeAddress(base),network_id:NETWORKS[base],type:'static',created_at:now()}];}
+    bw.balance.amount=+(bw.balance.amount+qty).toFixed(8);
+    bw.balance.withdrawable_amount=+(bw.balance.withdrawable_amount+qty).toFixed(8);
+    recalcFiat(bw);
+  }else{
+    hw.balance.amount=+(hw.balance.amount-qty).toFixed(8);
+    hw.balance.withdrawable_amount=Math.max(0,+(hw.balance.amount-hw.balance.holds).toFixed(8));
+    recalcFiat(hw);
+    var qw=findWallet(pid,quote);
+    if(!qw){qw=mkWallet(pid,quote+' Trading Wallet',quote,'TRADING');STATE.wallets.push(qw);STATE.depositAddresses[qw.id]=[];}
+    var proceeds=+(gross-commission).toFixed(8);
+    qw.balance.amount=+(qw.balance.amount+proceeds).toFixed(8);
+    qw.balance.withdrawable_amount=+(qw.balance.withdrawable_amount+proceeds).toFixed(8);
+    recalcFiat(qw);
+  }
+  o.status='FILLED';o.filled_quantity=qty;o.filled_value=gross;
+  o.average_filled_price=price;o.commission=commission;o.exchange_fee=+(gross*0.0002).toFixed(8);
+  o.net_average_filled_price=+(o.side==='BUY'?price*(1+COMMISSION_RATE):price*(1-COMMISSION_RATE)).toFixed(4);
+  addActivity(pid,'TRANSACTION','Order FILLED: '+o.side+' '+fmt(qty)+' '+o.product_id+' @ '+fmt(price)+' (commission '+fmt(commission)+' '+quote+')','COMPLETED',{kind:'ORDER',id:o.id});
+  UI.resp[respKey()]=respHTML('GET /v1/portfolios/'+pid+'/orders/'+o.id,{order_id:o.id},true,'200 OK — order filled',orderResponse(o));
+  renderAll();
+}
+function opCancelOrder(oid){
+  var o=STATE.orders.filter(function(x){return x.id===oid;})[0];
+  if(!o||o.status!=='OPEN'||o.type==='MARKET')return;
+  var hw=getWallet(o.hold_wallet);
+  hw.balance.holds=+(hw.balance.holds-o.hold_amt).toFixed(8);
+  hw.balance.withdrawable_amount=+(hw.balance.withdrawable_amount+o.hold_amt).toFixed(8);
+  o.status='CANCELLED';
+  UI.resp[respKey()]=respHTML('POST /v1/portfolios/'+o.portfolio_id+'/orders/'+o.id+'/cancel',{order_id:o.id},true,'200 OK — cancelled, hold released',orderResponse(o));
+  renderAll();
+}
+
+/* -- withdrawals -- */
+function opCreateWithdrawal(wid){
+  var w=getWallet(wid);
+  var ep='POST /v1/portfolios/'+w.portfolio_id+'/wallets/'+wid+'/withdrawals';
+  var amt=num('wd-amt'),dest=val('wd-dest'),idem=val('wd-idem'),cur=val('wd-cur');
+  var req={amount:isNaN(amt)?'':String(amt),currency_symbol:cur,destination_type:dest,idempotency_key:idem};
+  if(dest==='DESTINATION_BLOCKCHAIN')req.blockchain_address={address:val('wd-addr'),network:w.network.id};
+  if(dest==='DESTINATION_PAYMENT_METHOD')req.payment_method={payment_method_id:val('wd-pm')};
+  if(dest==='DESTINATION_WALLET')req.destination_wallet={wallet_id:val('wd-wallet')};
+  if(dest==='DESTINATION_COUNTERPARTY')req.counterparty={counterparty_id:val('wd-cp')};
+  if(isNaN(amt)||amt<=0){showResp(apiError(ep,req,'missing_required_field','amount must be a positive number'));return;}
+  if(!idem){showResp(apiError(ep,req,'missing_required_field','idempotency_key is required'));return;}
+  if(STATE.idem[idem]){
+    showResp(respHTML(ep,req,true,'200 OK — idempotent replay',STATE.idem[idem],'Duplicate idempotency_key — original withdrawal response returned, no new withdrawal created.'));return;}
+  if(amt>1000){
+    var tr={originator:{name:val('tr-oname'),address:val('tr-oaddr'),account_number:val('tr-oacct')},
+            beneficiary:{name:val('tr-bname'),address:val('tr-baddr'),account_number:val('tr-bacct')}};
+    req.travel_rule_data=tr;
+    if(!tr.originator.name||!tr.originator.address||!tr.originator.account_number||!tr.beneficiary.name||!tr.beneficiary.address||!tr.beneficiary.account_number){
+      showResp(apiError(ep,req,'travel_rule_required','Withdrawals above 1000 require complete travel_rule_data: originator and beneficiary name, address, and account_number are all mandatory'));return;}
+  }
+  if(dest==='DESTINATION_BLOCKCHAIN'&&!req.blockchain_address.address){
+    showResp(apiError(ep,req,'missing_destination_address','DESTINATION_BLOCKCHAIN requires blockchain_address.address'));return;}
+  if(dest==='DESTINATION_PAYMENT_METHOD'&&!req.payment_method.payment_method_id){
+    showResp(apiError(ep,req,'missing_payment_method','DESTINATION_PAYMENT_METHOD requires payment_method.payment_method_id'));return;}
+  if(dest==='DESTINATION_COUNTERPARTY'&&!req.counterparty.counterparty_id){
+    showResp(apiError(ep,req,'missing_counterparty','DESTINATION_COUNTERPARTY requires counterparty.counterparty_id'));return;}
+  if(dest==='DESTINATION_WALLET'&&!req.destination_wallet.wallet_id){
+    showResp(apiError(ep,req,'missing_destination_wallet','DESTINATION_WALLET requires a destination wallet_id'));return;}
+  if(STATE.withdrawals.filter(function(x){return x.wallet_id===wid&&x.status==='PENDING';}).length){
+    showResp(apiError(ep,req,'wallet_pending_withdrawal','This wallet has a pending withdrawal Activity that must be approved or rejected before creating another withdrawal','409 Conflict'));return;}
+  if(w.balance.withdrawable_amount<amt){
+    showResp(apiError(ep,req,'insufficient_funds','Insufficient funds: withdrawable_amount is '+fmt(w.balance.withdrawable_amount)+' '+w.symbol+', requested '+fmt(amt)));return;}
+  var fee=w.symbol==='USD'?0:+(amt*0.0005).toFixed(8);
+  var txid=uuid();
+  var a=addActivity(w.portfolio_id,'TRANSACTION','Withdrawal: '+fmt(amt)+' '+w.symbol+' → '+dest.replace('DESTINATION_',''),'PENDING',{kind:'WITHDRAWAL',id:txid});
+  STATE.withdrawals.unshift({transaction_id:txid,wallet_id:wid,portfolio_id:w.portfolio_id,amount:amt,symbol:w.symbol,
+    destination_type:dest,status:'PENDING',activity_id:a.activity_id,idempotency_key:idem,created_at:now()});
+  w.balance.holds=+(w.balance.holds+amt).toFixed(8);
+  w.balance.withdrawable_amount=+(w.balance.withdrawable_amount-amt).toFixed(8);
+  var res={activity_id:a.activity_id,approval_url:a.ui_url,symbol:w.symbol,amount:String(amt),fee:String(fee),
+    destination_type:dest,source_type:'SOURCE_WALLET',transaction_id:txid,status:'PENDING_APPROVAL'};
+  STATE.idem[idem]=res;
+  UI.resp[respKey()]=respHTML(ep,req,true,'201 Created — pending consensus approval',res,
+    'Amount moved to holds; withdrawable_amount reduced. Approve the Activity in the log to execute.');
+  renderAll();
+}
+
+/* -- conversions -- */
+function opCreateConversion(wid){
+  var w=getWallet(wid);
+  var ep='POST /v1/portfolios/'+w.portfolio_id+'/wallets/'+wid+'/conversion';
+  var amt=num('cv-amt'),dst=val('cv-dst'),dwid=val('cv-wallet'),idem=val('cv-idem');
+  var req={amount:isNaN(amt)?'':String(amt),destination:dwid,source_symbol:w.symbol,destination_symbol:dst,idempotency_key:idem};
+  if(isNaN(amt)||amt<=0){showResp(apiError(ep,req,'missing_required_field','amount must be a positive number'));return;}
+  var validPair=(w.symbol==='USD'&&(dst==='USDC'||dst==='PYUSD'))||(dst==='USD'&&(w.symbol==='USDC'||w.symbol==='PYUSD'));
+  if(!validPair){showResp(apiError(ep,req,'unsupported_conversion_pair','Unsupported pair: '+w.symbol+' → '+dst+'. Only USD↔USDC and USD↔PYUSD conversions are supported'));return;}
+  var dw=getWallet(dwid);
+  if(!dw){showResp(apiError(ep,req,'missing_destination_wallet','A destination wallet is required'));return;}
+  if(dw.portfolio_id!==w.portfolio_id){
+    showResp(apiError(ep,req,'conversion_cross_portfolio','Source and destination wallets must be in the same portfolio. Source is in "'+getPortfolio(w.portfolio_id).name+'", destination is in "'+getPortfolio(dw.portfolio_id).name+'"'));return;}
+  if(dw.symbol!==dst){showResp(apiError(ep,req,'destination_symbol_mismatch','Destination wallet holds '+dw.symbol+' but destination_symbol is '+dst));return;}
+  if(available(w)<amt){showResp(apiError(ep,req,'insufficient_funds','Insufficient '+w.symbol+' balance: available '+fmt(available(w))+', requested '+fmt(amt)));return;}
+  if(STATE.idem[idem]){showResp(respHTML(ep,req,true,'200 OK — idempotent replay',STATE.idem[idem],'Duplicate idempotency_key — original response returned.'));return;}
+  w.balance.amount=+(w.balance.amount-amt).toFixed(8);
+  w.balance.withdrawable_amount=+(w.balance.withdrawable_amount-amt).toFixed(8);
+  recalcFiat(w);
+  dw.balance.amount=+(dw.balance.amount+amt).toFixed(8);
+  dw.balance.withdrawable_amount=+(dw.balance.withdrawable_amount+amt).toFixed(8);
+  recalcFiat(dw);
+  var txid=uuid();
+  var a=addActivity(w.portfolio_id,'CONVERSION','Convert '+fmt(amt)+' '+w.symbol+' → '+dst,'COMPLETED',{kind:'CONVERSION',id:txid});
+  STATE.conversions.unshift({transaction_id:txid,source:wid,destination:dwid,source_symbol:w.symbol,destination_symbol:dst,amount:amt,activity_id:a.activity_id});
+  var res={activity_id:a.activity_id,source:wid,destination:dwid,source_symbol:w.symbol,destination_symbol:dst,amount:String(amt),transaction_id:txid,status:'COMPLETED'};
+  STATE.idem[idem]=res;
+  UI.resp[respKey()]=respHTML(ep,req,true,'201 Created — settled 1:1 internally',res);
+  renderAll();
+}
+
+/* -- staking -- */
+function opCreateStake(wid){
+  var w=getWallet(wid);
+  var ep='POST /v1/portfolios/'+w.portfolio_id+'/wallets/'+wid+'/staking/initiate';
+  var amt=num('sk-amt');
+  var req={amount:isNaN(amt)?'':String(amt),asset:w.symbol};
+  if(isNaN(amt)||amt<=0){showResp(apiError(ep,req,'missing_required_field','amount must be a positive number'));return;}
+  if(w.symbol==='ETH'&&amt<32){showResp(apiError(ep,req,'eth_min_stake','ETH staking minimum is 32 ETH per stake operation. Requested: '+fmt(amt)));return;}
+  if(w.symbol==='SOL'&&Math.abs(amt-w.balance.withdrawable_amount)>1e-9){
+    showResp(apiError(ep,req,'sol_full_stake_only','SOL supports full stake only — amount must equal the wallet withdrawable_amount ('+fmt(w.balance.withdrawable_amount)+')'));return;}
+  if(amt>w.balance.withdrawable_amount){
+    showResp(apiError(ep,req,'stake_exceeds_withdrawable','Cannot stake more than withdrawable_amount ('+fmt(w.balance.withdrawable_amount)+' '+w.symbol+') — locked/held funds cannot be staked'));return;}
+  var txid=uuid();
+  var a=addActivity(w.portfolio_id,'STAKING','Stake '+fmt(amt)+' '+w.symbol,'PENDING',{kind:'STAKE',id:txid});
+  STATE.stakingPositions.unshift({transaction_id:txid,activity_id:a.activity_id,wallet_id:wid,portfolio_id:w.portfolio_id,amount:amt,asset:w.symbol,status:'PENDING'});
+  w.balance.holds=+(w.balance.holds+amt).toFixed(8);
+  w.balance.withdrawable_amount=+(w.balance.withdrawable_amount-amt).toFixed(8);
+  UI.resp[respKey()]=respHTML(ep,req,true,'201 Created — pending approval',{activity_id:a.activity_id,transaction_id:txid,approval_url:a.ui_url,status:'PENDING'},
+    'Approve the Activity, then use "Advance" on the position: PENDING → BONDING → ACTIVE.');
+  renderAll();
+}
+function opCreateUnstake(wid){
+  var w=getWallet(wid);
+  var ep='POST /v1/portfolios/'+w.portfolio_id+'/wallets/'+wid+'/staking/unstake';
+  var posId=val('us-pos');
+  var p=STATE.stakingPositions.filter(function(x){return x.transaction_id===posId;})[0];
+  var amt=num('us-amt');
+  var req={position_id:posId||null,amount:isNaN(amt)?null:String(amt),asset:w.symbol};
+  if(!p){showResp(apiError(ep,req,'position_not_found','No staking position selected'));return;}
+  if(p.status!=='ACTIVE'){showResp(apiError(ep,req,'position_not_active','Cannot unstake: position status is '+p.status+'. Only ACTIVE positions can be unstaked','409 Conflict'));return;}
+  if(w.symbol==='SOL'){amt=p.amount;req.amount=String(amt);}
+  else{
+    if(isNaN(amt)||amt<=0){showResp(apiError(ep,req,'missing_required_field','ETH unstake requires an amount'));return;}
+    if(amt<1){showResp(apiError(ep,req,'eth_min_unstake','ETH partial unstake minimum is 1 ETH. Requested: '+fmt(amt)));return;}
+    if(amt>p.amount){showResp(apiError(ep,req,'unstake_exceeds_position','Cannot unstake '+fmt(amt)+' — position holds '+fmt(p.amount)+' ETH'));return;}
+  }
+  var a=addActivity(w.portfolio_id,'STAKING','Unstake '+fmt(amt)+' '+w.symbol,'PENDING',{kind:'UNSTAKE',id:p.transaction_id,amount:amt});
+  UI.resp[respKey()]=respHTML(ep,req,true,'201 Created — pending approval',{activity_id:a.activity_id,transaction_id:p.transaction_id,approval_url:a.ui_url,status:'PENDING'},
+    'Approve the Activity to begin UNBONDING, then "Advance" to COMPLETED to release funds.');
+  renderAll();
+}
+
+/* -- deposit addresses -- */
+function opGetDeposit(wid){
+  var w=getWallet(wid);
+  var ep='GET /v1/portfolios/'+w.portfolio_id+'/wallets/'+wid+'/deposit_instructions';
+  var type=val('da-type');
+  var req={wallet_id:wid,deposit_type:type};
+  if(w.symbol==='USD'){
+    showResp(apiError(ep,req,'fiat_no_crypto_address','Fiat wallets do not have blockchain deposit addresses. Fiat deposits are handled via bank wire details.'));return;}
+  var list=STATE.depositAddresses[wid]||(STATE.depositAddresses[wid]=[]);
+  var d;
+  if(type==='static'){
+    d=list.filter(function(x){return x.type==='static';})[0];
+    if(!d){d={wallet_id:wid,address:fakeAddress(w.symbol),network_id:NETWORKS[w.symbol],type:'static',created_at:now()};list.push(d);}
+  }else{
+    d={wallet_id:wid,address:fakeAddress(w.symbol),network_id:NETWORKS[w.symbol],type:'unique',created_at:now()};
+    list.push(d);
+  }
+  UI.resp[respKey()]=respHTML(ep,req,true,'200 OK',{deposit_instructions:{address:d.address,network_id:d.network_id,type:d.type,account_identifier:null},
+    note:type==='static'?'Static address — same address always returned for this wallet':'Unique address generated for per-sender tracking; do not reuse'});
+  renderMain();
+}
+
+/* ============================== init ============================== */
+seedState();
+renderAll();
+</script>
+</body>
+</html>
