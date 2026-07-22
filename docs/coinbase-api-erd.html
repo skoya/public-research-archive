@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coinbase API — Complete Entity Model (CDP v2 + Prime)</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0f172a;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;line-height:1.6}
+h1{font-size:1.5rem;font-weight:700;color:#f8fafc;letter-spacing:-0.02em}
+.subtitle{font-size:.8rem;color:#64748b;margin-bottom:28px}
+.api-section{margin-bottom:48px}
+.api-header{display:flex;align-items:center;gap:12px;margin-bottom:20px;padding-bottom:10px;border-bottom:2px solid #1e293b}
+.api-badge{font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:3px 10px;border-radius:4px}
+.badge-v2{background:#1d4ed8;color:#bfdbfe}
+.badge-prime{background:#6d28d9;color:#ddd6fe}
+.api-header h2{font-size:1.1rem;font-weight:700;color:#f1f5f9}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;margin-bottom:32px}
+.card{background:#1e293b;border:1px solid #334155;border-radius:8px;padding:14px 16px}
+.card h3{font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#64748b;margin-bottom:10px}
+.tag{display:inline-block;padding:2px 8px;border-radius:9999px;font-size:.72rem;font-weight:600;margin:2px 2px 2px 0}
+.t-blue{background:#1e3a5f;color:#93c5fd}.t-purple{background:#3b1f6f;color:#c4b5fd}
+.t-green{background:#064e3b;color:#6ee7b7}.t-amber{background:#78350f;color:#fde68a}
+.t-rose{background:#4c0519;color:#fca5a5}.t-slate{background:#334155;color:#cbd5e1}
+.t-sky{background:#0c4a6e;color:#bae6fd}.t-teal{background:#134e4a;color:#5eead4}
+.pfx{width:100%;border-collapse:collapse;font-size:.75rem}
+.pfx th{color:#64748b;text-align:left;padding:3px 0;font-weight:600;border-bottom:1px solid #334155}
+.pfx td{padding:5px 0;border-bottom:1px solid #1e293b;vertical-align:top}
+.pfx td:first-child{font-family:monospace;color:#7dd3fc;width:52%}
+.lc{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:.75rem}
+.lc-n{padding:4px 10px;border-radius:5px;font-weight:600;font-size:.72rem}
+.lc-q{background:#1e3a5f;color:#93c5fd;border:1px solid #1d4ed8}
+.lc-p{background:#3b1f6f;color:#c4b5fd;border:1px solid #6d28d9}
+.lc-c{background:#064e3b;color:#6ee7b7;border:1px solid #065f46}
+.lc-f{background:#4c0519;color:#fca5a5;border:1px solid #9f1239}
+.lc-a{color:#475569}
+.diagram-wrap{background:#1e293b;border:1px solid #334155;border-radius:8px;padding:20px;margin-bottom:28px;overflow-x:auto}
+.diagram-wrap h3{font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#64748b;margin-bottom:16px}
+.entity-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:12px;margin-bottom:28px}
+.ent{background:#1e293b;border:1px solid #334155;border-radius:8px;overflow:hidden}
+.ent-hd{padding:9px 13px;font-weight:700;font-size:.78rem;letter-spacing:.04em;display:flex;justify-content:space-between;align-items:center}
+.ent-hd .htag{font-size:.6rem;padding:2px 6px;border-radius:3px;font-weight:600}
+.eh-acc{background:#1e3a5f;color:#93c5fd;border-bottom:2px solid #1d4ed8}
+.eh-own{background:#312e81;color:#c7d2fe;border-bottom:2px solid #6366f1}
+.eh-dep{background:#064e3b;color:#6ee7b7;border-bottom:2px solid #059669}
+.eh-pay{background:#4c1d95;color:#ddd6fe;border-bottom:2px solid #7c3aed}
+.eh-trn{background:#78350f;color:#fde68a;border-bottom:2px solid #d97706}
+.eh-fee{background:#14532d;color:#86efac;border-bottom:2px solid #22c55e}
+.eh-onc{background:#0c4a6e;color:#bae6fd;border-bottom:2px solid #0284c7}
+.eh-trl{background:#7f1d1d;color:#fca5a5;border-bottom:2px solid #dc2626}
+.eh-org{background:#1e293b;color:#94a3b8;border-bottom:2px solid #475569}
+.eh-ent{background:#27272a;color:#d4d4d8;border-bottom:2px solid #52525b}
+.eh-prt{background:#1e3a5f;color:#93c5fd;border-bottom:2px solid #2563eb}
+.eh-wlt{background:#1a2e4a;color:#7dd3fc;border-bottom:2px solid #0369a1}
+.eh-bal{background:#134e4a;color:#5eead4;border-bottom:2px solid #0d9488}
+.eh-ord{background:#422006;color:#fed7aa;border-bottom:2px solid #c2410c}
+.eh-com{background:#1c1917;color:#a8a29e;border-bottom:2px solid #57534e}
+.frow{display:grid;grid-template-columns:2fr 1fr 1.2fr;font-size:.71rem;padding:5px 13px;border-top:1px solid #0f172a;gap:5px}
+.frow:hover{background:#263348}
+.fn{font-family:monospace;color:#7dd3fc}
+.ft{color:#94a3b8}
+.fn-pk{color:#fbbf24;font-weight:700;font-size:.65rem;text-align:right}
+.fn-fk{color:#a78bfa;font-weight:700;font-size:.65rem;text-align:right}
+.fn-opt{color:#475569;font-style:italic;font-size:.65rem;text-align:right}
+.fn-req{color:#4ade80;font-size:.65rem;text-align:right}
+.fn-en{color:#fb923c;font-size:.65rem;text-align:right}
+.fdesc{font-size:.68rem;color:#64748b;padding:3px 13px 6px;border-top:1px solid #0f172a;font-style:italic}
+.rel-table{width:100%;border-collapse:collapse;font-size:.78rem;margin-bottom:28px}
+.rel-table th{background:#1e293b;color:#64748b;text-align:left;padding:8px 12px;font-size:.65rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;border-bottom:2px solid #334155}
+.rel-table td{padding:8px 12px;border-bottom:1px solid #1e293b;vertical-align:top}
+.rel-table tr:hover td{background:#1e293b}
+.rel-table td:first-child{font-family:monospace;color:#7dd3fc}
+.rel-table td:nth-child(2){font-family:monospace;color:#a78bfa}
+.rel-table td:nth-child(3){color:#94a3b8;font-size:.72rem}
+.wt-table{width:100%;border-collapse:collapse;font-size:.78rem;margin-bottom:28px}
+.wt-table th{background:#1e293b;color:#64748b;padding:8px 12px;text-align:left;font-size:.65rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;border-bottom:2px solid #334155}
+.wt-table td{padding:9px 12px;border-bottom:1px solid #1e293b;vertical-align:top}
+.wt-table tr:hover td{background:#1e293b}
+.section-label{font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#64748b;margin:24px 0 12px}
+footer{text-align:center;color:#334155;font-size:.7rem;padding:24px;border-top:1px solid #1e293b;margin-top:40px}
+.wrap{max-width:1280px;margin:0 auto;padding:32px}
+svg text{font-family:system-ui,sans-serif}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Coinbase API — Complete Entity Model</h1>
+<p class="subtitle">CDP API v2 (Custodial) · Coinbase Prime API · Account types · Wallet types · Key identifiers · Relationship model</p>
+
+<!-- Quick reference cards -->
+<div class="cards">
+  <div class="card">
+    <h3>CDP v2 Account Types</h3>
+    <div style="display:flex;flex-direction:column;gap:8px;font-size:.77rem">
+      <div><span class="tag t-blue">prime</span><span style="color:#94a3b8;margin-left:6px">Linked Coinbase Prime account</span></div>
+      <div><span class="tag t-purple">business</span><span style="color:#94a3b8;margin-left:6px">Linked Coinbase Business account</span></div>
+      <div><span class="tag t-green">cdp</span><span style="color:#94a3b8;margin-left:6px">CDP-native account, created via API</span></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Prime Wallet Types → Portfolio Constraint</h3>
+    <div style="display:flex;flex-direction:column;gap:7px;font-size:.75rem">
+      <div><span class="tag t-green">TRADING</span><span style="color:#94a3b8;margin-left:5px">Trading Balance Wallet — <strong style="color:#6ee7b7">Prime Trading</strong> portfolios only · one per asset · auto-created</span></div>
+      <div><span class="tag t-purple">QC</span><span style="color:#94a3b8;margin-left:5px">Prime Custody Wallet — <strong style="color:#c4b5fd">Prime Custody</strong> portfolios only · one per asset · MiCA-compliant option</span></div>
+      <div><span class="tag t-amber">VAULT</span><span style="color:#94a3b8;margin-left:5px">Custodial Vault Wallet — <strong style="color:#fde68a">both</strong> portfolio types · multiple per asset · requires approval workflow</span></div>
+      <div><span class="tag t-sky">ONCHAIN</span><span style="color:#94a3b8;margin-left:5px">Prime Onchain Wallet (POW) — <strong style="color:#bae6fd">both</strong> portfolio types · full blockchain address</span></div>
+      <div><span class="tag t-slate">OTHER</span><span style="color:#94a3b8;margin-left:5px">Consumer and miscellaneous types</span></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>ID Prefix Conventions</h3>
+    <table class="pfx">
+      <thead><tr><th>Prefix / Format</th><th>Entity</th></tr></thead>
+      <tbody>
+        <tr><td>account_&lt;uuid&gt;</td><td>CDP v2 Account</td></tr>
+        <tr><td>entity_&lt;uuid&gt;</td><td>Owner — Organisation</td></tr>
+        <tr><td>customer_&lt;uuid&gt;</td><td>Owner — Individual</td></tr>
+        <tr><td>UUID (bare)</td><td>Prime: Portfolio, Wallet, Order</td></tr>
+        <tr><td>UUID (bare)</td><td>Prime: Organisation, Entity</td></tr>
+        <tr><td>opaque string</td><td>Transfer, PaymentMethod, DepositDest</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="card">
+    <h3>Transfer Status Lifecycle</h3>
+    <div class="lc" style="margin-bottom:10px">
+      <span class="lc-n lc-q">quoted</span>
+      <span class="lc-a">→</span>
+      <span class="lc-n lc-p">processing</span>
+      <span class="lc-a">→</span>
+      <div style="display:flex;flex-direction:column;gap:5px">
+        <span class="lc-n lc-c">completed</span>
+        <span class="lc-n lc-f">failed</span>
+      </div>
+    </div>
+    <p style="font-size:.68rem;color:#64748b"><strong style="color:#93c5fd">quoted</strong>: created, fee estimate locked, awaits /execute<br>
+    <strong style="color:#c4b5fd">processing</strong>: executing, monitor via webhook<br>
+    <strong style="color:#6ee7b7">completed</strong>: funds delivered successfully<br>
+    <strong style="color:#fca5a5">failed</strong>: see failureReason field</p>
+  </div>
+  <div class="card">
+    <h3>Prime Portfolio Types</h3>
+    <div style="display:flex;flex-direction:column;gap:10px;font-size:.77rem">
+      <div>
+        <span class="tag t-green" style="margin-bottom:4px">Prime Trading</span>
+        <p style="color:#94a3b8;margin:4px 0 0">Omnibus trading portfolio. Contains one TRADING wallet per asset. Supports spot &amp; futures trading, financing, buying power. Created automatically on UI navigation or trade placement.</p>
+      </div>
+      <div>
+        <span class="tag t-purple" style="margin-bottom:4px">Prime Custody</span>
+        <p style="color:#94a3b8;margin:4px 0 0">Qualified custodian portfolio. Contains one QC wallet per asset. Assets held within qualified custodian structure. MiCA-compliant option available in Europe.</p>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Prime Order Types</h3>
+    <div style="display:flex;flex-wrap:wrap;gap:5px">
+      <span class="tag t-amber">MARKET</span><span class="tag t-amber">LIMIT</span><span class="tag t-amber">TWAP</span>
+      <span class="tag t-amber">VWAP</span><span class="tag t-amber">BLOCK</span><span class="tag t-amber">STOP_LIMIT</span>
+      <span class="tag t-amber">RFQ</span><span class="tag t-amber">PEG</span>
+    </div>
+    <div style="margin-top:10px;font-size:.72rem;color:#64748b">
+      <strong style="color:#e2e8f0">Time in force:</strong> GTD · GUC · IOC · FOK<br>
+      <strong style="color:#e2e8f0">Order status:</strong> OPEN · FILLED · CANCELLED · EXPIRED · FAILED · PENDING<br>
+      <strong style="color:#e2e8f0">Product types:</strong> SPOT · FUTURE
+    </div>
+  </div>
+  <div class="card">
+    <h3>Payment Rails (CDP v2)</h3>
+    <div style="display:flex;flex-direction:column;gap:8px;font-size:.77rem">
+      <div><span class="tag t-teal">ACH</span><span style="color:#94a3b8;margin-left:6px">US domestic bank transfer</span></div>
+      <div><span class="tag t-teal">Fedwire</span><span style="color:#94a3b8;margin-left:6px">US domestic wire</span></div>
+      <div><span class="tag t-teal">SWIFT</span><span style="color:#94a3b8;margin-left:6px">International wire</span></div>
+      <div><span class="tag t-teal">SEPA</span><span style="color:#94a3b8;margin-left:6px">European bank transfer</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SECTION A: CDP API v2 ===== -->
+<div class="api-section">
+  <div class="api-header">
+    <span class="api-badge badge-v2">CDP API v2</span>
+    <h2>Custodial Account &amp; Transfer Model</h2>
+  </div>
+
+  <!-- SVG Diagram 1 -->
+  <div class="diagram-wrap">
+    <h3>Entity Relationship Diagram — CDP API v2</h3>
+    <svg viewBox="0 0 1060 470" xmlns="http://www.w3.org/2000/svg" style="width:100%;min-width:800px">
+      <defs>
+        <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#475569"/>
+        </marker>
+        <marker id="arr2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#334155"/>
+        </marker>
+      </defs>
+
+      <!-- Connection lines (drawn first, behind boxes) -->
+      <!-- OWNER → ACCOUNT -->
+      <path d="M112,75 L112,150" stroke="#475569" stroke-width="1.5" fill="none" marker-end="url(#arr)"/>
+      <!-- ACCOUNT → DEPOSIT_DESTINATION -->
+      <path d="M195,168 L235,168 L235,57 L270,57" stroke="#475569" stroke-width="1.5" fill="none" marker-end="url(#arr)"/>
+      <!-- DEPOSIT_DESTINATION → DD_CRYPTO -->
+      <path d="M362,95 L362,138 L325,138 L325,185" stroke="#475569" stroke-width="1.5" fill="none" marker-end="url(#arr)"/>
+      <!-- DEPOSIT_DESTINATION → DD_FIAT -->
+      <path d="M362,95 L362,138 L495,138 L495,185" stroke="#475569" stroke-width="1.5" fill="none" marker-end="url(#arr)"/>
+      <!-- ACCOUNT → TRANSFER (source/target) -->
+      <path d="M195,160 L600,160 L600,237 L640,237" stroke="#475569" stroke-width="1.5" fill="none" marker-end="url(#arr)" stroke-dasharray="5,3"/>
+      <!-- PAYMENT_METHOD → TRANSFER -->
+      <path d="M195,410 L600,410 L600,295 L640,295" stroke="#475569" stroke-width="1.5" fill="none" marker-end="url(#arr)" stroke-dasharray="5,3"/>
+      <!-- TRANSFER → TRANSFER_FEE -->
+      <path d="M825,230 L852,230 L852,60 L880,60" stroke="#334155" stroke-width="1.5" fill="none" marker-end="url(#arr2)"/>
+      <!-- TRANSFER → ONCHAIN_TX -->
+      <path d="M825,255 L852,255 L852,205 L880,205" stroke="#334155" stroke-width="1.5" fill="none" marker-end="url(#arr2)"/>
+      <!-- TRANSFER → TRAVEL_RULE -->
+      <path d="M825,270 L852,270 L852,375 L880,375" stroke="#334155" stroke-width="1.5" fill="none" marker-end="url(#arr2)"/>
+
+      <!-- Line labels -->
+      <text x="120" y="118" font-size="9" fill="#64748b">owns</text>
+      <text x="198" y="155" font-size="9" fill="#64748b">has</text>
+      <text x="602" y="155" font-size="9" fill="#64748b">src/tgt</text>
+      <text x="198" y="400" font-size="9" fill="#64748b">src/tgt</text>
+      <text x="828" y="148" font-size="9" fill="#64748b">fees</text>
+      <text x="828" y="233" font-size="9" fill="#64748b">onchain</text>
+      <text x="828" y="318" font-size="9" fill="#64748b">travel rule</text>
+      <text x="300" y="132" font-size="9" fill="#64748b">crypto</text>
+      <text x="420" y="132" font-size="9" fill="#64748b">fiat</text>
+
+      <!-- OWNER box -->
+      <rect x="30" y="20" width="165" height="55" rx="5" fill="#312e81" stroke="#6366f1" stroke-width="1.5"/>
+      <rect x="30" y="20" width="165" height="22" rx="5" fill="#312e81"/>
+      <rect x="30" y="35" width="165" height="7" fill="#312e81"/>
+      <text x="112" y="35" font-size="11" font-weight="700" fill="#c7d2fe" text-anchor="middle">OWNER</text>
+      <text x="38" y="51" font-size="9" fill="#818cf8">ownerId PK</text>
+      <text x="38" y="63" font-size="9" fill="#94a3b8">ownerType: entity | customer</text>
+
+      <!-- ACCOUNT box -->
+      <rect x="30" y="150" width="165" height="85" rx="5" fill="#1e3a5f" stroke="#1d4ed8" stroke-width="1.5"/>
+      <rect x="30" y="150" width="165" height="22" rx="5" fill="#1e3a5f"/>
+      <rect x="30" y="165" width="165" height="7" fill="#1e3a5f"/>
+      <text x="112" y="165" font-size="11" font-weight="700" fill="#93c5fd" text-anchor="middle">ACCOUNT</text>
+      <text x="38" y="181" font-size="9" fill="#fbbf24">accountId PK  account_uuid</text>
+      <text x="38" y="193" font-size="9" fill="#94a3b8">type: prime | business | cdp</text>
+      <text x="38" y="205" font-size="9" fill="#a78bfa">owner FK  entity_/customer_</text>
+      <text x="38" y="217" font-size="9" fill="#64748b">name (opt) · createdAt · updatedAt</text>
+
+      <!-- PAYMENT_METHOD box -->
+      <rect x="30" y="380" width="165" height="65" rx="5" fill="#4c1d95" stroke="#7c3aed" stroke-width="1.5"/>
+      <rect x="30" y="380" width="165" height="22" rx="5" fill="#4c1d95"/>
+      <rect x="30" y="395" width="165" height="7" fill="#4c1d95"/>
+      <text x="112" y="395" font-size="11" font-weight="700" fill="#ddd6fe" text-anchor="middle">PAYMENT_METHOD</text>
+      <text x="38" y="411" font-size="9" fill="#fbbf24">paymentMethodId PK</text>
+      <text x="38" y="423" font-size="9" fill="#94a3b8">type: ach | fedwire | swift | sepa</text>
+      <text x="38" y="435" font-size="9" fill="#a78bfa">accountId FK · status</text>
+
+      <!-- DEPOSIT_DESTINATION box -->
+      <rect x="270" y="20" width="185" height="75" rx="5" fill="#064e3b" stroke="#059669" stroke-width="1.5"/>
+      <rect x="270" y="20" width="185" height="22" rx="5" fill="#064e3b"/>
+      <rect x="270" y="35" width="185" height="7" fill="#064e3b"/>
+      <text x="362" y="35" font-size="11" font-weight="700" fill="#6ee7b7" text-anchor="middle">DEPOSIT_DESTINATION</text>
+      <text x="278" y="51" font-size="9" fill="#fbbf24">depositDestinationId PK</text>
+      <text x="278" y="63" font-size="9" fill="#a78bfa">accountId FK</text>
+      <text x="278" y="75" font-size="9" fill="#94a3b8">type: crypto|fiat · status: active|pending</text>
+
+      <!-- DD_CRYPTO box -->
+      <rect x="255" y="185" width="150" height="60" rx="5" fill="#064e3b" stroke="#059669" stroke-width="1" stroke-dasharray="4,2"/>
+      <rect x="255" y="185" width="150" height="20" rx="5" fill="#065f46"/>
+      <rect x="255" y="198" width="150" height="7" fill="#065f46"/>
+      <text x="330" y="198" font-size="10" font-weight="700" fill="#6ee7b7" text-anchor="middle">DD_CRYPTO</text>
+      <text x="263" y="213" font-size="9" fill="#94a3b8">network: base|eth|etc</text>
+      <text x="263" y="225" font-size="9" fill="#94a3b8">address: blockchain addr</text>
+      <text x="263" y="237" font-size="9" fill="#64748b">subtype when type=crypto</text>
+
+      <!-- DD_FIAT box -->
+      <rect x="420" y="185" width="150" height="75" rx="5" fill="#064e3b" stroke="#059669" stroke-width="1" stroke-dasharray="4,2"/>
+      <rect x="420" y="185" width="150" height="20" rx="5" fill="#065f46"/>
+      <rect x="420" y="198" width="150" height="7" fill="#065f46"/>
+      <text x="495" y="198" font-size="10" font-weight="700" fill="#6ee7b7" text-anchor="middle">DD_FIAT</text>
+      <text x="428" y="213" font-size="9" fill="#94a3b8">accountType · currency</text>
+      <text x="428" y="225" font-size="9" fill="#94a3b8">bankName · routingNumber</text>
+      <text x="428" y="237" font-size="9" fill="#94a3b8">accountNumber · supportedRails</text>
+      <text x="428" y="249" font-size="9" fill="#64748b">subtype when type=fiat</text>
+
+      <!-- TRANSFER box -->
+      <rect x="640" y="175" width="185" height="135" rx="5" fill="#78350f" stroke="#d97706" stroke-width="1.5"/>
+      <rect x="640" y="175" width="185" height="22" rx="5" fill="#78350f"/>
+      <rect x="640" y="190" width="185" height="7" fill="#78350f"/>
+      <text x="732" y="190" font-size="11" font-weight="700" fill="#fde68a" text-anchor="middle">TRANSFER</text>
+      <text x="648" y="206" font-size="9" fill="#fbbf24">transferId PK</text>
+      <text x="648" y="218" font-size="9" fill="#94a3b8">status: quoted|processing|completed|failed</text>
+      <text x="648" y="230" font-size="9" fill="#94a3b8">sourceType: account|payment_method</text>
+      <text x="648" y="242" font-size="9" fill="#94a3b8">targetType: account|pm|onchain|email</text>
+      <text x="648" y="254" font-size="9" fill="#a78bfa">sourceAccountId FK  targetAccountId FK</text>
+      <text x="648" y="266" font-size="9" fill="#94a3b8">amount · asset · amountType</text>
+      <text x="648" y="278" font-size="9" fill="#94a3b8">exchangeRate (opt) · execute · validateOnly</text>
+      <text x="648" y="290" font-size="9" fill="#64748b">expiresAt · executedAt · completedAt</text>
+
+      <!-- TRANSFER_FEE box -->
+      <rect x="880" y="30" width="170" height="60" rx="5" fill="#14532d" stroke="#22c55e" stroke-width="1.5"/>
+      <rect x="880" y="30" width="170" height="20" rx="5" fill="#14532d"/>
+      <rect x="880" y="43" width="170" height="7" fill="#14532d"/>
+      <text x="965" y="43" font-size="10" font-weight="700" fill="#86efac" text-anchor="middle">TRANSFER_FEE</text>
+      <text x="888" y="57" font-size="9" fill="#94a3b8">type: bank|conversion|network</text>
+      <text x="888" y="69" font-size="9" fill="#94a3b8">amount · asset</text>
+
+      <!-- ONCHAIN_TX box -->
+      <rect x="880" y="175" width="170" height="60" rx="5" fill="#0c4a6e" stroke="#0284c7" stroke-width="1.5"/>
+      <rect x="880" y="175" width="170" height="20" rx="5" fill="#0c4a6e"/>
+      <rect x="880" y="188" width="170" height="7" fill="#0c4a6e"/>
+      <text x="965" y="188" font-size="10" font-weight="700" fill="#bae6fd" text-anchor="middle">ONCHAIN_TRANSACTION</text>
+      <text x="888" y="203" font-size="9" fill="#94a3b8">txHash · network</text>
+      <text x="888" y="215" font-size="9" fill="#64748b">populated post-execution</text>
+
+      <!-- TRAVEL_RULE box -->
+      <rect x="880" y="345" width="170" height="70" rx="5" fill="#7f1d1d" stroke="#dc2626" stroke-width="1.5"/>
+      <rect x="880" y="345" width="170" height="20" rx="5" fill="#7f1d1d"/>
+      <rect x="880" y="358" width="170" height="7" fill="#7f1d1d"/>
+      <text x="965" y="358" font-size="10" font-weight="700" fill="#fca5a5" text-anchor="middle">TRAVEL_RULE</text>
+      <text x="888" y="373" font-size="9" fill="#94a3b8">status · originatorName</text>
+      <text x="888" y="385" font-size="9" fill="#94a3b8">originatorAccount</text>
+      <text x="888" y="397" font-size="9" fill="#94a3b8">beneficiaryName · beneficiaryAccount</text>
+
+      <!-- Legend -->
+      <text x="30" y="460" font-size="9" fill="#475569">── solid: mandatory relationship   ╌╌ dashed: optional/polymorphic reference</text>
+    </svg>
+  </div>
+
+  <!-- CDP v2 Entity Tables -->
+  <p class="section-label">CDP v2 — Entity Field Reference</p>
+  <div class="entity-grid">
+
+    <!-- OWNER -->
+    <div class="ent">
+      <div class="ent-hd eh-own">OWNER <span class="htag" style="background:#3730a3;color:#c7d2fe">polymorphic identity</span></div>
+      <div class="fdesc">The identity that owns one or more Accounts. Polymorphic: the ownerId prefix encodes the owner type — no separate lookup required. There is no standalone Owner API resource.</div>
+      <div class="frow"><span class="fn">ownerId</span><span class="ft">string</span><span class="fn-pk">PK</span></div>
+      <div class="fdesc">Prefixed UUID: entity_&lt;uuid&gt; = organisation, customer_&lt;uuid&gt; = individual</div>
+      <div class="frow"><span class="fn">ownerType</span><span class="ft">enum</span><span class="fn-en">entity | customer</span></div>
+      <div class="fdesc">Discriminator derived from ownerId prefix</div>
+    </div>
+
+    <!-- ACCOUNT -->
+    <div class="ent">
+      <div class="ent-hd eh-acc">ACCOUNT <span class="htag" style="background:#1d4ed8;color:#bfdbfe">core resource</span></div>
+      <div class="fdesc">Primary asset container on CDP. Serves as source and target for Transfers. Three types reflect how the account was originated: prime (linked from Coinbase Prime), business (linked from CB Business), or cdp (natively provisioned via this API).</div>
+      <div class="frow"><span class="fn">accountId</span><span class="ft">string</span><span class="fn-pk">PK</span></div>
+      <div class="fdesc">Always prefixed account_&lt;uuid&gt;, e.g. account_af2937b0-9846-...</div>
+      <div class="frow"><span class="fn">type</span><span class="ft">enum</span><span class="fn-en">prime|business|cdp</span></div>
+      <div class="fdesc">Account origin type. prime and business are linked external accounts; cdp is natively provisioned.</div>
+      <div class="frow"><span class="fn">owner</span><span class="ft">string</span><span class="fn-fk">FK → OWNER</span></div>
+      <div class="fdesc">Polymorphic owner ID. Prefix determines owner type without extra lookup.</div>
+      <div class="frow"><span class="fn">name</span><span class="ft">string</span><span class="fn-opt">optional</span></div>
+      <div class="fdesc">1–64 chars, alphanumeric + hyphens + spaces. Not unique; display only.</div>
+      <div class="frow"><span class="fn">createdAt</span><span class="ft">datetime</span><span class="fn-req">req</span></div>
+      <div class="frow"><span class="fn">updatedAt</span><span class="ft">datetime</span><span class="fn-req">req</span></div>
+    </div>
+
+    <!-- DEPOSIT_DESTINATION -->
+    <div class="ent">
+      <div class="ent-hd eh-dep">DEPOSIT_DESTINATION <span class="htag" style="background:#065f46;color:#6ee7b7">inbound</span></div>
+      <div class="fdesc">An inbound payment address or bank account provisioned on behalf of an Account. Defines where external parties send funds that then settle into the linked Account. Polymorphic by type: crypto holds a blockchain address; fiat holds bank routing details.</div>
+      <div class="frow"><span class="fn">depositDestinationId</span><span class="ft">string</span><span class="fn-pk">PK</span></div>
+      <div class="frow"><span class="fn">accountId</span><span class="ft">string</span><span class="fn-fk">FK → ACCOUNT</span></div>
+      <div class="fdesc">The account that owns this deposit destination.</div>
+      <div class="frow"><span class="fn">type</span><span class="ft">enum</span><span class="fn-en">crypto | fiat</span></div>
+      <div class="fdesc">Determines which subtype object is present.</div>
+      <div class="frow"><span class="fn">status</span><span class="ft">enum</span><span class="fn-en">active | pending</span></div>
+      <div class="fdesc">active = ready to receive. pending = fiat destination awaiting bank provisioning (private beta).</div>
+      <div class="frow"><span class="fn">targetAccountId</span><span class="ft">string</span><span class="fn-req">req</span></div>
+      <div class="fdesc">The Account into which incoming funds are settled. May differ from accountId for routing.</div>
+      <div class="frow"><span class="fn">targetAsset</span><span class="ft">string</span><span class="fn-req">req</span></div>
+      <div class="fdesc">Expected settlement asset, e.g. usd, usdc.</div>
+      <div class="frow"><span class="fn">metadata</span><span class="ft">jsonb</span><span class="fn-opt">optional</span></div>
+      <div class="fdesc">Up to 10 key-value pairs for integration-side tracking (e.g. customer reference IDs).</div>
+    </div>
+
+    <!-- DD_CRYPTO -->
+    <div class="ent">
+      <div class="ent-hd eh-dep">DD_CRYPTO <span class="htag" style="background:#065f46;color:#6ee7b7">subtype</span></div>
+      <div class="fdesc">Extended fields present when DEPOSIT_DESTINATION type=crypto. Defines the blockchain network and address that external senders use to deposit funds onchain.</div>
+      <div class="frow"><span class="fn">depositDestinationId</span><span class="ft">string</span><span class="fn-pk">PK/FK</span></div>
+      <div class="frow"><span class="fn">network</span><span class="ft">string</span><span class="fn-req">req</span></div>
+      <div class="fdesc">Blockchain network identifier: base, ethereum, polygon, solana, bitcoin, etc.</div>
+      <div class="frow"><span class="fn">address</span><span class="ft">string</span><span class="fn-req">req</span></div>
+      <div class="fdesc">The public blockchain address to which senders direct funds. Auto-assigned by Coinbase.</div>
+    </div>
+
+    <!-- DD_FIAT -->
+    <div class="ent">
+      <div class="ent-hd eh-dep">DD_FIAT <span class="htag" style="background:#065f46;color:#6ee7b7">subtype · beta</span></div>
+      <div class="fdesc">Extended fields when DEPOSIT_DESTINATION type=fiat. Full bank account details provisioned by Coinbase on behalf of the customer. Currently private beta; supports ACH rails for USD.</div>
+      <div class="frow"><span class="fn">depositDestinationId</span><span class="ft">string</span><span class="fn-pk">PK/FK</span></div>
+      <div class="frow"><span class="fn">accountType</span><span class="ft">string</span><span class="fn-req">req</span></div>
+      <div class="fdesc">Bank account classification, e.g. us_bank.</div>
+      <div class="frow"><span class="fn">currency</span><span class="ft">string</span><span class="fn-req">req</span></div>
+      <div class="fdesc">Settlement currency. Currently usd only.</div>
+      <div class="frow"><span class="fn">bankName</span><span class="ft">string</span><span class="fn-req">req</span></div>
+      <div class="frow"><span class="fn">beneficiaryName</span><span class="ft">string</span><span class="fn-req">req</span></div>
+      <div class="fdesc">Account holder name as registered with the bank.</div>
+      <div class="frow"><span class="fn">routingNumber</span><span class="ft">string</span><span class="fn-req">req</span></div>
+      <div class="fdesc">ABA routing number for US domestic transfers.</div>
+      <div class="frow"><span class="fn">accountNumber</span><span class="ft">string</span><span class="fn-req">req</span></div>
+      <div class="frow"><span class="fn">bankAddress</span><span class="ft">string</span><span class="fn-req">req</span></div>
+      <div class="frow"><span class="fn">supportedRails</span><span class="ft">string[]</span><span class="fn-req">req</span></div>
+      <div class="fdesc">Payment rails accepted: e.g. ["ach"]. Additional rails planned.</div>
+    </div>
+
+    <!-- PAYMENT_METHOD -->
+    <div class="ent">
+      <div class="ent-hd eh-pay">PAYMENT_METHOD <span class="htag" style="background:#4c1d95;color:#ddd6fe">instrument</span></div>
+      <div class="fdesc">An external financial instrument — bank or wire account — usable as source or target in a Transfer. Unlike Deposit Destinations (inbound only), Payment Methods support bidirectional movement. Covers four major institutional rails.</div>
+      <div class="frow"><span class="fn">paymentMethodId</span><span class="ft">string</span><span class="fn-pk">PK</span></div>
+      <div class="frow"><span class="fn">type</span><span class="ft">enum</span><span class="fn-en">ach|fedwire|swift|sepa</span></div>
+      <div class="fdesc">ach: US domestic. fedwire: US wire. swift: international. sepa: European.</div>
+      <div class="frow"><span class="fn">accountId</span><span class="ft">string</span><span class="fn-fk">FK → ACCOUNT</span></div>
+      <div class="fdesc">The CDP Account this payment method is associated with.</div>
+      <div class="frow"><span class="fn">status</span><span class="ft">string</span><span class="fn-req">req</span></div>
+      <div class="frow"><span class="fn">createdAt</span><span class="ft">datetime</span><span class="fn-req">req</span></div>
+      <div class="frow"><span class="fn">updatedAt</span><span class="ft">datetime</span><span class="fn-req">req</span></div>
+    </div>
+
+    <!-- TRANSFER -->
+    <div class="ent" style="grid-column:span 2">
+      <div class="ent-hd eh-trn">TRANSFER <span class="htag" style="background:#d97706;color:#fef3c7">core movement</span></div>
+      <div class="fdesc">The core fund movement instruction. Transfers are polymorphic at both source and target: source can be an Account or Payment Method; target can be an Account, Payment Method, onchain address, or email. Created in quoted state with a fee estimate; must be executed within the expiry window. The quote-then-execute pattern allows fee review before commitment.</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr">
+        <div>
+          <div class="frow"><span class="fn">transferId</span><span class="ft">string</span><span class="fn-pk">PK</span></div>
+          <div class="frow"><span class="fn">status</span><span class="ft">enum</span><span class="fn-en">quoted|processing|completed|failed</span></div>
+          <div class="fdesc">State machine. See lifecycle card above.</div>
+          <div class="frow"><span class="fn">sourceType</span><span class="ft">enum</span><span class="fn-en">account|payment_method</span></div>
+          <div class="frow"><span class="fn">sourceAccountId</span><span class="ft">string</span><span class="fn-fk">FK → ACCOUNT</span></div>
+          <div class="frow"><span class="fn">sourcePaymentMethodId</span><span class="ft">string</span><span class="fn-fk">FK → PAYMENT_METHOD</span></div>
+          <div class="fdesc">Exactly one of sourceAccountId or sourcePaymentMethodId must be set.</div>
+          <div class="frow"><span class="fn">targetType</span><span class="ft">enum</span><span class="fn-en">account|pm|onchain|email</span></div>
+          <div class="frow"><span class="fn">targetAccountId</span><span class="ft">string</span><span class="fn-fk">FK → ACCOUNT</span></div>
+          <div class="frow"><span class="fn">targetPaymentMethodId</span><span class="ft">string</span><span class="fn-fk">FK → PAYMENT_METHOD</span></div>
+          <div class="frow"><span class="fn">targetDepositDestId</span><span class="ft">string</span><span class="fn-fk">FK → DEPOSIT_DEST</span></div>
+          <div class="fdesc">Exactly one target FK set based on targetType.</div>
+        </div>
+        <div>
+          <div class="frow"><span class="fn">amount</span><span class="ft">decimal</span><span class="fn-req">req</span></div>
+          <div class="frow"><span class="fn">asset</span><span class="ft">string</span><span class="fn-req">req</span></div>
+          <div class="frow"><span class="fn">amountType</span><span class="ft">enum</span><span class="fn-en">source | target</span></div>
+          <div class="fdesc">Whether amount is deducted from source or delivered to target.</div>
+          <div class="frow"><span class="fn">sourceAmount / sourceAsset</span><span class="ft">decimal/str</span><span class="fn-req">post-exec</span></div>
+          <div class="frow"><span class="fn">targetAmount / targetAsset</span><span class="ft">decimal/str</span><span class="fn-req">post-exec</span></div>
+          <div class="fdesc">Actual amounts post-execution; may differ from requested amount due to fees.</div>
+          <div class="frow"><span class="fn">exchangeRate</span><span class="ft">decimal</span><span class="fn-opt">optional</span></div>
+          <div class="fdesc">Populated when source and target assets differ (e.g. USD → USDC).</div>
+          <div class="frow"><span class="fn">execute</span><span class="ft">boolean</span><span class="fn-req">req</span></div>
+          <div class="fdesc">true = auto-execute. false = create quoted state, then call /execute.</div>
+          <div class="frow"><span class="fn">validateOnly</span><span class="ft">boolean</span><span class="fn-opt">optional</span></div>
+          <div class="fdesc">Dry-run validation without initiating the transfer.</div>
+          <div class="frow"><span class="fn">expiresAt</span><span class="ft">datetime</span><span class="fn-opt">quoted only</span></div>
+          <div class="frow"><span class="fn">executedAt / completedAt</span><span class="ft">datetime</span><span class="fn-opt">post-exec</span></div>
+          <div class="frow"><span class="fn">failureReason</span><span class="ft">string</span><span class="fn-opt">when failed</span></div>
+          <div class="frow"><span class="fn">metadata</span><span class="ft">jsonb</span><span class="fn-opt">optional</span></div>
+          <div class="fdesc">Up to 10 key-value pairs, passed through the full lifecycle.</div>
+          <div class="frow"><span class="fn">createdAt / updatedAt</span><span class="ft">datetime</span><span class="fn-req">req</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TRANSFER_FEE -->
+    <div class="ent">
+      <div class="ent-hd eh-fee">TRANSFER_FEE <span class="htag" style="background:#14532d;color:#86efac">child array</span></div>
+      <div class="fdesc">Fee line items returned as an array on the Transfer. Three fee types can co-exist on a single transfer. Each fee is denominated in its own asset, which may differ from the transfer asset.</div>
+      <div class="frow"><span class="fn">transferId</span><span class="ft">string</span><span class="fn-fk">FK → TRANSFER</span></div>
+      <div class="frow"><span class="fn">type</span><span class="ft">enum</span><span class="fn-en">bank|conversion|network</span></div>
+      <div class="fdesc">bank: traditional banking charges (wire fees etc). conversion: FX/asset swap fee. network: blockchain gas fee.</div>
+      <div class="frow"><span class="fn">amount</span><span class="ft">decimal</span><span class="fn-req">req</span></div>
+      <div class="frow"><span class="fn">asset</span><span class="ft">string</span><span class="fn-req">req</span></div>
+      <div class="fdesc">Fee denomination, e.g. usd for bank fees, usdc for network fees.</div>
+    </div>
+
+    <!-- ONCHAIN_TRANSACTION -->
+    <div class="ent">
+      <div class="ent-hd eh-onc">ONCHAIN_TRANSACTION <span class="htag" style="background:#0c4a6e;color:#bae6fd">child array</span></div>
+      <div class="fdesc">Blockchain transaction records produced when a Transfer results in onchain settlement. A single Transfer can produce multiple onchain transactions (e.g. multi-chain routing). Read-only; populated post-execution.</div>
+      <div class="frow"><span class="fn">transferId</span><span class="ft">string</span><span class="fn-fk">FK → TRANSFER</span></div>
+      <div class="frow"><span class="fn">txHash</span><span class="ft">string</span><span class="fn-req">req</span></div>
+      <div class="fdesc">Blockchain transaction hash for on-chain verification.</div>
+      <div class="frow"><span class="fn">network</span><span class="ft">string</span><span class="fn-req">req</span></div>
+      <div class="fdesc">Blockchain network identifier: base, ethereum, bitcoin, etc.</div>
+    </div>
+
+    <!-- TRAVEL_RULE -->
+    <div class="ent">
+      <div class="ent-hd eh-trl">TRAVEL_RULE <span class="htag" style="background:#7f1d1d;color:#fca5a5">compliance</span></div>
+      <div class="fdesc">FATF Travel Rule compliance attachment on a Transfer. Captures originator and beneficiary identity required for transfers above regulatory thresholds. Status reflects the compliance check outcome from the counterparty VASP.</div>
+      <div class="frow"><span class="fn">transferId</span><span class="ft">string</span><span class="fn-fk">FK → TRANSFER</span></div>
+      <div class="frow"><span class="fn">status</span><span class="ft">string</span><span class="fn-req">req</span></div>
+      <div class="fdesc">Compliance check status from counterparty VASP.</div>
+      <div class="frow"><span class="fn">originatorName</span><span class="ft">string</span><span class="fn-opt">optional</span></div>
+      <div class="frow"><span class="fn">originatorAccount</span><span class="ft">string</span><span class="fn-opt">optional</span></div>
+      <div class="frow"><span class="fn">beneficiaryName</span><span class="ft">string</span><span class="fn-opt">optional</span></div>
+      <div class="frow"><span class="fn">beneficiaryAccount</span><span class="ft">string</span><span class="fn-opt">optional</span></div>
+      <div class="fdesc">Originator/beneficiary fields required for outbound vs. inbound transfers respectively.</div>
+    </div>
+
+  </div><!-- end entity-grid -->
+
+</div><!-- end CDP v2 section -->
+
+<!-- ===== SECTION B: PRIME API ===== -->
+<div class="api-section">
+  <div class="api-header">
+    <span class="api-badge badge-prime">Coinbase Prime API</span>
+    <h2>Portfolio, Wallet &amp; Order Model</h2>
+  </div>
+
+  <!-- SVG Diagram 2 -->
+  <div class="diagram-wrap">
+    <h3>Entity Relationship Diagram — Coinbase Prime API</h3>
+    <svg viewBox="0 0 1060 430" xmlns="http://www.w3.org/2000/svg" style="width:100%;min-width:800px">
+      <defs>
+        <marker id="arr3" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#475569"/>
+        </marker>
+      </defs>
+
+      <!-- Connection lines -->
+      <!-- ORG → ENTITY -->
+      <path d="M165,190 L210,190" stroke="#475569" stroke-width="1.5" fill="none" marker-end="url(#arr3)"/>
+      <!-- ENTITY → PORTFOLIO -->
+      <path d="M365,190 L415,190" stroke="#475569" stroke-width="1.5" fill="none" marker-end="url(#arr3)"/>
+      <!-- PORTFOLIO → WALLET -->
+      <path d="M492,235 L492,305" stroke="#475569" stroke-width="1.5" fill="none" marker-end="url(#arr3)"/>
+      <!-- WALLET → WALLET_BALANCE -->
+      <path d="M565,345 L645,345" stroke="#475569" stroke-width="1.5" fill="none" marker-end="url(#arr3)"/>
+      <!-- PORTFOLIO → ORDER -->
+      <path d="M565,185 L605,185 L605,175 L645,175" stroke="#475569" stroke-width="1.5" fill="none" marker-end="url(#arr3)"/>
+      <!-- PORTFOLIO top → COMMISSION -->
+      <path d="M492,160 L492,95 L645,95" stroke="#334155" stroke-width="1.5" fill="none" marker-end="url(#arr3)" stroke-dasharray="4,3"/>
+      <!-- WALLET type boxes connection -->
+      <path d="M492,385 L492,415" stroke="#334155" stroke-width="1" fill="none" stroke-dasharray="3,3"/>
+      <!-- fan to types -->
+      <path d="M492,415 L125,415 M492,415 L258,415 M492,415 L388,415 M492,415 L518,415 M492,415 L648,415" stroke="#334155" stroke-width="1" fill="none" stroke-dasharray="2,3"/>
+
+      <!-- Labels -->
+      <text x="167" y="183" font-size="9" fill="#64748b">has entities</text>
+      <text x="367" y="183" font-size="9" fill="#64748b">has portfolios</text>
+      <text x="494" y="275" font-size="9" fill="#64748b">has wallets</text>
+      <text x="567" y="340" font-size="9" fill="#64748b">balance</text>
+      <text x="567" y="182" font-size="9" fill="#64748b">has orders</text>
+      <text x="494" y="120" font-size="9" fill="#64748b">commission</text>
+
+      <!-- ORGANIZATION box -->
+      <rect x="20" y="160" width="145" height="60" rx="5" fill="#1e293b" stroke="#475569" stroke-width="1.5"/>
+      <rect x="20" y="160" width="145" height="20" rx="5" fill="#27272a"/>
+      <rect x="20" y="173" width="145" height="7" fill="#27272a"/>
+      <text x="92" y="173" font-size="11" font-weight="700" fill="#d4d4d8" text-anchor="middle">ORGANIZATION</text>
+      <text x="28" y="189" font-size="9" fill="#fbbf24">organization_id PK  UUID</text>
+      <text x="28" y="201" font-size="9" fill="#94a3b8">name (string)</text>
+      <text x="28" y="213" font-size="9" fill="#64748b">Top-level institutional entity</text>
+
+      <!-- ENTITY box -->
+      <rect x="210" y="160" width="155" height="60" rx="5" fill="#27272a" stroke="#52525b" stroke-width="1.5"/>
+      <rect x="210" y="160" width="155" height="20" rx="5" fill="#3f3f46"/>
+      <rect x="210" y="173" width="155" height="7" fill="#3f3f46"/>
+      <text x="287" y="173" font-size="11" font-weight="700" fill="#e4e4e7" text-anchor="middle">ENTITY</text>
+      <text x="218" y="189" font-size="9" fill="#fbbf24">entity_id PK  UUID</text>
+      <text x="218" y="201" font-size="9" fill="#94a3b8">entity_name</text>
+      <text x="218" y="213" font-size="9" fill="#a78bfa">organization_id FK</text>
+
+      <!-- PORTFOLIO box -->
+      <rect x="415" y="160" width="155" height="75" rx="5" fill="#1e3a5f" stroke="#2563eb" stroke-width="1.5"/>
+      <rect x="415" y="160" width="155" height="20" rx="5" fill="#1e3a5f"/>
+      <rect x="415" y="173" width="155" height="7" fill="#1e3a5f"/>
+      <text x="492" y="173" font-size="11" font-weight="700" fill="#93c5fd" text-anchor="middle">PORTFOLIO</text>
+      <text x="423" y="189" font-size="9" fill="#fbbf24">id PK  bare UUID</text>
+      <text x="423" y="201" font-size="9" fill="#94a3b8">name (string)</text>
+      <text x="423" y="213" font-size="9" fill="#a78bfa">entity_id FK · organization_id FK</text>
+      <text x="423" y="225" font-size="9" fill="#64748b">entity_name (denormalised)</text>
+
+      <!-- WALLET box -->
+      <rect x="415" y="305" width="150" height="80" rx="5" fill="#1a2e4a" stroke="#0369a1" stroke-width="1.5"/>
+      <rect x="415" y="305" width="150" height="20" rx="5" fill="#1a2e4a"/>
+      <rect x="415" y="318" width="150" height="7" fill="#1a2e4a"/>
+      <text x="490" y="318" font-size="11" font-weight="700" fill="#7dd3fc" text-anchor="middle">WALLET</text>
+      <text x="423" y="334" font-size="9" fill="#fbbf24">id PK  bare UUID</text>
+      <text x="423" y="346" font-size="9" fill="#94a3b8">type: TRADING|VAULT|ONCHAIN|QC|OTHER</text>
+      <text x="423" y="358" font-size="9" fill="#94a3b8">symbol · address · visibility</text>
+      <text x="423" y="370" font-size="9" fill="#94a3b8">network.id · network.type</text>
+
+      <!-- WALLET_BALANCE box -->
+      <rect x="645" y="290" width="200" height="110" rx="5" fill="#134e4a" stroke="#0d9488" stroke-width="1.5"/>
+      <rect x="645" y="290" width="200" height="20" rx="5" fill="#134e4a"/>
+      <rect x="645" y="303" width="200" height="7" fill="#134e4a"/>
+      <text x="745" y="303" font-size="11" font-weight="700" fill="#5eead4" text-anchor="middle">WALLET_BALANCE</text>
+      <text x="653" y="319" font-size="9" fill="#94a3b8">amount · holds · fiat_amount</text>
+      <text x="653" y="331" font-size="9" fill="#94a3b8">withdrawable_amount</text>
+      <text x="653" y="343" font-size="9" fill="#94a3b8">bonded · bondable · unbonding</text>
+      <text x="653" y="355" font-size="9" fill="#94a3b8">pending_rewards · past_rewards</text>
+      <text x="653" y="367" font-size="9" fill="#94a3b8">claimable_rewards (ETH only)</text>
+      <text x="653" y="379" font-size="9" fill="#94a3b8">unvested · reserved · symbol</text>
+
+      <!-- ORDER box -->
+      <rect x="645" y="145" width="165" height="80" rx="5" fill="#422006" stroke="#c2410c" stroke-width="1.5"/>
+      <rect x="645" y="145" width="165" height="20" rx="5" fill="#422006"/>
+      <rect x="645" y="158" width="165" height="7" fill="#422006"/>
+      <text x="727" y="158" font-size="11" font-weight="700" fill="#fed7aa" text-anchor="middle">ORDER</text>
+      <text x="653" y="174" font-size="9" fill="#fbbf24">id PK · client_order_id</text>
+      <text x="653" y="186" font-size="9" fill="#94a3b8">type: MARKET|LIMIT|TWAP|VWAP|BLOCK|...</text>
+      <text x="653" y="198" font-size="9" fill="#94a3b8">side: BUY|SELL · status · product_id</text>
+      <text x="653" y="210" font-size="9" fill="#94a3b8">filled_qty · avg_filled_price</text>
+      <text x="653" y="222" font-size="9" fill="#a78bfa">portfolio_id FK</text>
+
+      <!-- COMMISSION box -->
+      <rect x="645" y="65" width="160" height="60" rx="5" fill="#1c1917" stroke="#57534e" stroke-width="1.5"/>
+      <rect x="645" y="65" width="160" height="20" rx="5" fill="#1c1917"/>
+      <rect x="645" y="78" width="160" height="7" fill="#1c1917"/>
+      <text x="725" y="78" font-size="10" font-weight="700" fill="#a8a29e" text-anchor="middle">COMMISSION</text>
+      <text x="653" y="94" font-size="9" fill="#94a3b8">type: all_in | cost_plus</text>
+      <text x="653" y="106" font-size="9" fill="#94a3b8">rate (decimal, e.g. 0.0015=15bps)</text>
+      <text x="653" y="118" font-size="9" fill="#64748b">trading_volume (90-day avg)</text>
+
+      <!-- Wallet type mini-boxes -->
+      <rect x="65" y="415" width="115" height="38" rx="4" fill="#064e3b" stroke="#059669" stroke-width="1"/>
+      <text x="122" y="428" font-size="9" font-weight="700" fill="#6ee7b7" text-anchor="middle">TRADING</text>
+      <text x="122" y="441" font-size="8" fill="#94a3b8" text-anchor="middle">Hot · trading funds</text>
+
+      <rect x="198" y="415" width="115" height="38" rx="4" fill="#78350f" stroke="#d97706" stroke-width="1"/>
+      <text x="255" y="428" font-size="9" font-weight="700" fill="#fde68a" text-anchor="middle">VAULT</text>
+      <text x="255" y="441" font-size="8" fill="#94a3b8" text-anchor="middle">Cold · prime custody</text>
+
+      <rect x="328" y="415" width="115" height="38" rx="4" fill="#0c4a6e" stroke="#0284c7" stroke-width="1"/>
+      <text x="385" y="428" font-size="9" font-weight="700" fill="#bae6fd" text-anchor="middle">ONCHAIN</text>
+      <text x="385" y="441" font-size="8" fill="#94a3b8" text-anchor="middle">Hot · blockchain address</text>
+
+      <rect x="458" y="415" width="100" height="38" rx="4" fill="#4c1d95" stroke="#7c3aed" stroke-width="1"/>
+      <text x="508" y="428" font-size="9" font-weight="700" fill="#ddd6fe" text-anchor="middle">QC</text>
+      <text x="508" y="441" font-size="8" fill="#94a3b8" text-anchor="middle">Qualified custodian</text>
+
+      <rect x="578" y="415" width="115" height="38" rx="4" fill="#334155" stroke="#475569" stroke-width="1"/>
+      <text x="635" y="428" font-size="9" font-weight="700" fill="#cbd5e1" text-anchor="middle">OTHER</text>
+      <text x="635" y="441" font-size="8" fill="#94a3b8" text-anchor="middle">Consumer / misc</text>
+    </svg>
+  </div>
+
+  <!-- Wallet type comparison -->
+  <p class="section-label">Wallet Type Comparison</p>
+  <table class="wt-table" style="margin-bottom:28px">
+    <thead>
+      <tr><th>API Type</th><th>Full Name</th><th>Portfolio Constraint</th><th>Per Asset Limit</th><th>Creation</th><th>Cold / Hot</th><th>Primary Use Case</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><span class="tag t-green">TRADING</span></td><td>Trading Balance Wallet</td><td><span class="tag t-green" style="font-size:.65rem">Prime Trading only</span></td><td>1 per asset</td><td>Auto (UI nav, trade, or API)</td><td>Hot</td><td>Active trading, financing, buying power. Omnibus for all spot/futures flows.</td></tr>
+      <tr><td><span class="tag t-purple">QC</span></td><td>Prime Custody Wallet</td><td><span class="tag t-purple" style="font-size:.65rem">Prime Custody only</span></td><td>1 per asset</td><td>Auto (UI nav, trade, or API)</td><td>Cold</td><td>Qualified custodian structure. MiCA-compliant option (Europe). Regulated institutional custody.</td></tr>
+      <tr><td><span class="tag t-amber">VAULT</span></td><td>Custodial Vault Wallet</td><td><span class="tag t-slate" style="font-size:.65rem">Both types</span></td><td>Multiple per asset</td><td>API + approval workflow → Activity ID</td><td>Cold</td><td>Offline segregated storage. Enhanced security. Requires consensus approval and activity review.</td></tr>
+      <tr><td><span class="tag t-sky">ONCHAIN</span></td><td>Prime Onchain Wallet (POW)</td><td><span class="tag t-slate" style="font-size:.65rem">Both types</span></td><td>Multiple per asset</td><td>API call</td><td>Hot</td><td>Direct onchain interaction, DeFi, programmatic tx signing via Server Signer.</td></tr>
+      <tr><td><span class="tag t-slate">OTHER</span></td><td>WALLET_TYPE_OTHER</td><td>Varies</td><td>Varies</td><td>Varies</td><td>Varies</td><td>Consumer accounts and miscellaneous wallet types.</td></tr>
+    </tbody>
+  </table>
+
+  <!-- Prime Entity Tables -->
+  <p class="section-label">Prime API — Entity Field Reference</p>
+  <div class="entity-grid">
+
+    <!-- ORGANIZATION -->
+    <div class="ent">
+      <div class="ent-hd eh-org">ORGANIZATION <span class="htag" style="background:#3f3f46;color:#a1a1aa">root</span></div>
+      <div class="fdesc">Top-level institutional entity. The root of the Prime hierarchy. A single organisation can have multiple Entities (business units, legal entities, sub-organisations).</div>
+      <div class="frow"><span class="fn">organization_id</span><span class="ft">string</span><span class="fn-pk">PK</span></div>
+      <div class="fdesc">Bare UUID (no prefix), e.g. 4c1d4464-e53b-429f-a81d-71ae7e2e687c</div>
+      <div class="frow"><span class="fn">name</span><span class="ft">string</span><span class="fn-req">req</span></div>
+    </div>
+
+    <!-- ENTITY -->
+    <div class="ent">
+      <div class="ent-hd eh-ent">ENTITY <span class="htag" style="background:#52525b;color:#d4d4d8">org tier</span></div>
+      <div class="fdesc">A business or legal entity within an Organisation. Entities own Portfolios. Enables segregation of assets across business lines, legal entities, or jurisdictions within a single org.</div>
+      <div class="frow"><span class="fn">entity_id</span><span class="ft">string</span><span class="fn-pk">PK</span></div>
+      <div class="fdesc">Bare UUID, e.g. 2c521d6c-1cfb-4371-bf9c-5a42938d3e75</div>
+      <div class="frow"><span class="fn">entity_name</span><span class="ft">string</span><span class="fn-req">req</span></div>
+      <div class="fdesc">Human-readable entity name, e.g. "Sample Prime Entity"</div>
+      <div class="frow"><span class="fn">organization_id</span><span class="ft">string</span><span class="fn-fk">FK → ORGANIZATION</span></div>
+    </div>
+
+    <!-- PORTFOLIO -->
+    <div class="ent">
+      <div class="ent-hd eh-prt">PORTFOLIO <span class="htag" style="background:#2563eb;color:#bfdbfe">account container</span></div>
+      <div class="fdesc">A logical account container within an Entity. Two portfolio types exist: <strong>Prime Trading</strong> (for active trading — contains one TRADING wallet per asset, supports financing and buying power) and <strong>Prime Custody</strong> (qualified custodian structure — contains one QC wallet per asset, MiCA-compliant option in Europe). Commission rates, permissions, and trading rules are configured at portfolio level.</div>
+      <div class="frow"><span class="fn">id</span><span class="ft">string</span><span class="fn-pk">PK</span></div>
+      <div class="fdesc">Bare UUID, e.g. e8bbed13-fa33-41de-86d5-4335d8f08166</div>
+      <div class="frow"><span class="fn">name</span><span class="ft">string</span><span class="fn-req">req</span></div>
+      <div class="fdesc">Portfolio label, e.g. "CryptoBalances"</div>
+      <div class="frow"><span class="fn">portfolio_type</span><span class="ft">enum</span><span class="fn-en">PRIME_TRADING | PRIME_CUSTODY</span></div>
+      <div class="fdesc">Determines available wallet types and custody structure.</div>
+      <div class="frow"><span class="fn">entity_id</span><span class="ft">string</span><span class="fn-fk">FK → ENTITY</span></div>
+      <div class="frow"><span class="fn">organization_id</span><span class="ft">string</span><span class="fn-fk">FK → ORGANIZATION</span></div>
+      <div class="fdesc">Denormalised for direct portfolio-level queries without traversing entity.</div>
+      <div class="frow"><span class="fn">entity_name</span><span class="ft">string</span><span class="fn-opt">denormalised</span></div>
+    </div>
+
+    <!-- WALLET -->
+    <div class="ent">
+      <div class="ent-hd eh-wlt">WALLET <span class="htag" style="background:#0369a1;color:#bae6fd">asset holder</span></div>
+      <div class="fdesc">An asset holder within a Portfolio. Each wallet holds a single asset on a single network. Type determines custody model, portfolio eligibility, and available operations. <strong>TRADING</strong>: omnibus trading wallet, one per asset, Prime Trading portfolios only, auto-created. <strong>QC</strong>: Prime Custody Wallet, one per asset, Prime Custody portfolios only, MiCA-compliant option. <strong>VAULT</strong>: Custodial Vault Wallet, multiple per asset allowed, both portfolio types, requires explicit API creation + consensus approval. <strong>ONCHAIN</strong>: Prime Onchain Wallet (POW), both portfolio types, programmatic signing via Server Signer.</div>
+      <div class="frow"><span class="fn">id</span><span class="ft">string</span><span class="fn-pk">PK</span></div>
+      <div class="fdesc">Bare UUID — no prefix. Referenced by portfolio_id path parameter: GET /v1/portfolios/{portfolio_id}/wallets</div>
+      <div class="frow"><span class="fn">name</span><span class="ft">string</span><span class="fn-req">req</span></div>
+      <div class="frow"><span class="fn">symbol</span><span class="ft">string</span><span class="fn-req">req</span></div>
+      <div class="fdesc">Asset ticker held in this wallet, e.g. BTC, ETH, USDC.</div>
+      <div class="frow"><span class="fn">type</span><span class="ft">enum</span><span class="fn-en">TRADING|VAULT|ONCHAIN|QC|OTHER</span></div>
+      <div class="fdesc">Determines custody model, access controls, and available operations.</div>
+      <div class="frow"><span class="fn">address</span><span class="ft">string</span><span class="fn-opt">ONCHAIN/VAULT</span></div>
+      <div class="fdesc">Active blockchain address. Present on ONCHAIN wallets; deposit-only on VAULT.</div>
+      <div class="frow"><span class="fn">visibility</span><span class="ft">enum</span><span class="fn-en">VISIBLE|HIDDEN|UNSPECIFIED</span></div>
+      <div class="frow"><span class="fn">network.id</span><span class="ft">string</span><span class="fn-req">req</span></div>
+      <div class="fdesc">Blockchain network: base, bitcoin, ethereum, solana, polygon, etc.</div>
+      <div class="frow"><span class="fn">network.type</span><span class="ft">string</span><span class="fn-req">req</span></div>
+      <div class="fdesc">Network environment: mainnet, testnet.</div>
+      <div class="frow"><span class="fn">created_at</span><span class="ft">datetime</span><span class="fn-req">req</span></div>
+    </div>
+
+    <!-- WALLET_BALANCE -->
+    <div class="ent">
+      <div class="ent-hd eh-bal">WALLET_BALANCE <span class="htag" style="background:#0d9488;color:#ccfbf1">balance breakdown</span></div>
+      <div class="fdesc">Detailed balance breakdown for a Wallet. Separates total holdings into operational sub-buckets. Critical for understanding how much is available to trade, withdraw, or stake vs. what is locked. Accessed via GET /v1/portfolios/{portfolio_id}/wallets/{wallet_id}/balance.</div>
+      <div class="frow"><span class="fn">amount</span><span class="ft">decimal</span><span class="fn-req">req</span></div>
+      <div class="fdesc">Total balance including all holds. The gross figure.</div>
+      <div class="frow"><span class="fn">holds</span><span class="ft">decimal</span><span class="fn-req">req</span></div>
+      <div class="fdesc">Amount locked against open orders or pending withdrawals. Not available to trade or move.</div>
+      <div class="frow"><span class="fn">withdrawable_amount</span><span class="ft">decimal</span><span class="fn-req">req</span></div>
+      <div class="fdesc">Amount available for immediate withdrawal after all deductions.</div>
+      <div class="frow"><span class="fn">fiat_amount</span><span class="ft">decimal</span><span class="fn-req">req</span></div>
+      <div class="fdesc">Total balance expressed in fiat equivalent (USD).</div>
+      <div class="frow"><span class="fn">bonded_amount</span><span class="ft">decimal</span><span class="fn-req">req</span></div>
+      <div class="fdesc">Funds locked in active staking arrangements.</div>
+      <div class="frow"><span class="fn">bondable_amount</span><span class="ft">decimal</span><span class="fn-req">req</span></div>
+      <div class="fdesc">Funds eligible to be staked but not yet committed.</div>
+      <div class="frow"><span class="fn">unbonding_amount</span><span class="ft">decimal</span><span class="fn-req">req</span></div>
+      <div class="fdesc">Funds in the unbonding/unstaking process; not yet available.</div>
+      <div class="frow"><span class="fn">unbondable_amount</span><span class="ft">decimal</span><span class="fn-req">req</span></div>
+      <div class="fdesc">Staked funds eligible to begin unbonding.</div>
+      <div class="frow"><span class="fn">pending_rewards_amount</span><span class="ft">decimal</span><span class="fn-req">req</span></div>
+      <div class="fdesc">Unrealized staking rewards accrued but not yet claimable.</div>
+      <div class="frow"><span class="fn">past_rewards_amount</span><span class="ft">decimal</span><span class="fn-req">req</span></div>
+      <div class="fdesc">Cumulative previously realized staking rewards.</div>
+      <div class="frow"><span class="fn">claimable_rewards_amount</span><span class="ft">decimal</span><span class="fn-opt">ETH only</span></div>
+      <div class="fdesc">ETH staking rewards ready to claim. ETH wallets only.</div>
+      <div class="frow"><span class="fn">unvested_amount</span><span class="ft">decimal</span><span class="fn-req">req</span></div>
+      <div class="fdesc">Amount subject to a vesting schedule; not yet available.</div>
+      <div class="frow"><span class="fn">reserved_amount</span><span class="ft">decimal</span><span class="fn-req">req</span></div>
+      <div class="fdesc">Amount that must remain in the wallet per protocol requirements.</div>
+      <div class="frow"><span class="fn">symbol</span><span class="ft">string</span><span class="fn-req">req</span></div>
+      <div class="fdesc">Asset symbol matching the parent Wallet.</div>
+    </div>
+
+    <!-- ORDER -->
+    <div class="ent">
+      <div class="ent-hd eh-ord">ORDER <span class="htag" style="background:#c2410c;color:#fed7aa">trading</span></div>
+      <div class="fdesc">A trading instruction on the Prime platform. Supports eight execution strategies from simple market orders to algorithmic types (TWAP, VWAP) and institutional block trades. Commission and fee detail are embedded on the order for full post-trade reconciliation.</div>
+      <div class="frow"><span class="fn">id</span><span class="ft">string</span><span class="fn-pk">PK</span></div>
+      <div class="fdesc">Bare UUID assigned by Coinbase.</div>
+      <div class="frow"><span class="fn">client_order_id</span><span class="ft">string</span><span class="fn-opt">optional</span></div>
+      <div class="fdesc">Client-generated idempotency reference for dedup.</div>
+      <div class="frow"><span class="fn">portfolio_id</span><span class="ft">string</span><span class="fn-fk">FK → PORTFOLIO</span></div>
+      <div class="frow"><span class="fn">user_id</span><span class="ft">string</span><span class="fn-req">req</span></div>
+      <div class="fdesc">Prime user ID of the order creator.</div>
+      <div class="frow"><span class="fn">product_id</span><span class="ft">string</span><span class="fn-req">req</span></div>
+      <div class="fdesc">Trading pair, e.g. BTC-USD, ETH-USDC.</div>
+      <div class="frow"><span class="fn">side</span><span class="ft">enum</span><span class="fn-en">BUY | SELL</span></div>
+      <div class="frow"><span class="fn">type</span><span class="ft">enum</span><span class="fn-en">MARKET|LIMIT|TWAP|VWAP|BLOCK|STOP_LIMIT|RFQ|PEG</span></div>
+      <div class="fdesc">TWAP/VWAP require start_time. LIMIT/STOP_LIMIT require limit_price. PEG requires peg_offset_type.</div>
+      <div class="frow"><span class="fn">status</span><span class="ft">enum</span><span class="fn-en">OPEN|FILLED|CANCELLED|EXPIRED|FAILED|PENDING</span></div>
+      <div class="frow"><span class="fn">product_type</span><span class="ft">enum</span><span class="fn-en">SPOT | FUTURE</span></div>
+      <div class="frow"><span class="fn">base_quantity</span><span class="ft">decimal</span><span class="fn-req">req</span></div>
+      <div class="fdesc">Order size in base asset units.</div>
+      <div class="frow"><span class="fn">quote_value</span><span class="ft">decimal</span><span class="fn-opt">optional</span></div>
+      <div class="fdesc">Order size in quote asset (alternative to base_quantity for market orders).</div>
+      <div class="frow"><span class="fn">limit_price</span><span class="ft">decimal</span><span class="fn-opt">LIMIT/STOP_LIMIT</span></div>
+      <div class="frow"><span class="fn">stop_price</span><span class="ft">decimal</span><span class="fn-opt">STOP_LIMIT</span></div>
+      <div class="fdesc">Activation threshold for stop-limit orders.</div>
+      <div class="frow"><span class="fn">time_in_force</span><span class="ft">enum</span><span class="fn-en">GTD|GUC|IOC|FOK</span></div>
+      <div class="fdesc">GTD=Good Till Date, GUC=Good Until Cancelled, IOC=Immediate or Cancel, FOK=Fill or Kill.</div>
+      <div class="frow"><span class="fn">filled_quantity</span><span class="ft">decimal</span><span class="fn-req">post-exec</span></div>
+      <div class="frow"><span class="fn">filled_value</span><span class="ft">decimal</span><span class="fn-req">post-exec</span></div>
+      <div class="frow"><span class="fn">average_filled_price</span><span class="ft">decimal</span><span class="fn-req">post-exec</span></div>
+      <div class="frow"><span class="fn">net_average_filled_price</span><span class="ft">decimal</span><span class="fn-req">post-exec</span></div>
+      <div class="fdesc">Average fill price after commissions and fees.</div>
+      <div class="frow"><span class="fn">commission</span><span class="ft">decimal</span><span class="fn-req">post-exec</span></div>
+      <div class="frow"><span class="fn">exchange_fee</span><span class="ft">decimal</span><span class="fn-req">post-exec</span></div>
+      <div class="frow"><span class="fn">post_only</span><span class="ft">boolean</span><span class="fn-opt">optional</span></div>
+      <div class="fdesc">Reject if order would take liquidity (maker-only).</div>
+      <div class="frow"><span class="fn">created_at</span><span class="ft">datetime</span><span class="fn-req">req</span></div>
+      <div class="frow"><span class="fn">expiry_time</span><span class="ft">datetime</span><span class="fn-opt">GTD only</span></div>
+      <div class="frow"><span class="fn">start_time</span><span class="ft">datetime</span><span class="fn-opt">TWAP/VWAP</span></div>
+    </div>
+
+    <!-- ACTIVITY -->
+    <div class="ent">
+      <div class="ent-hd" style="background:#1c2a1c;color:#86efac;border-bottom:2px solid #4ade80">ACTIVITY <span class="htag" style="background:#14532d;color:#86efac">audit log</span></div>
+      <div class="fdesc">An auditable event record for every significant action within a Prime account. Acts as the reconciliation layer for API users. Generated automatically by transactions (withdrawals, transfers), user management operations (add/remove users), API key creation, staking operations, and wallet vault creation. Activities requiring consensus must be approved or rejected in the Prime UI before finalisation. Each activity provides a unique hyperlink to the Prime UI for governance workflows.</div>
+      <div class="frow"><span class="fn">activity_id</span><span class="ft">string</span><span class="fn-pk">PK</span></div>
+      <div class="fdesc">Unique identifier. Also returned by staking and vault creation operations as a tracking reference.</div>
+      <div class="frow"><span class="fn">portfolio_id</span><span class="ft">string</span><span class="fn-fk">FK → PORTFOLIO</span></div>
+      <div class="frow"><span class="fn">type</span><span class="ft">enum</span><span class="fn-en">TRANSACTION | USER_MGMT | API_KEY | STAKING | WALLET_CREATION | ...</span></div>
+      <div class="fdesc">Activity type determines what generated it. See API reference for full enum.</div>
+      <div class="frow"><span class="fn">status</span><span class="ft">string</span><span class="fn-req">req</span></div>
+      <div class="fdesc">Pending approval, approved, rejected, or completed.</div>
+      <div class="frow"><span class="fn">ui_url</span><span class="ft">string</span><span class="fn-req">req</span></div>
+      <div class="fdesc">Direct hyperlink to this activity in the Prime UI for review and consensus action.</div>
+    </div>
+
+    <!-- DEPOSIT_ADDRESS -->
+    <div class="ent">
+      <div class="ent-hd" style="background:#0c2a3f;color:#7dd3fc;border-bottom:2px solid #0ea5e9">DEPOSIT_ADDRESS <span class="htag" style="background:#0c4a6e;color:#bae6fd">inbound · Prime</span></div>
+      <div class="fdesc">A blockchain address provisioned for inbound crypto deposits into a Prime Wallet. Two address variants exist: <strong>static</strong> (same address always returned for a wallet — use for regular recurring senders) and <strong>unique</strong> (generated per request for enhanced tracking per sender or invoice). Both are retrieved via the Get Deposit Instructions endpoint. Fiat deposits are handled separately via bank wire details outside this entity.</div>
+      <div class="frow"><span class="fn">wallet_id</span><span class="ft">string</span><span class="fn-fk">FK → WALLET</span></div>
+      <div class="frow"><span class="fn">address</span><span class="ft">string</span><span class="fn-req">req</span></div>
+      <div class="fdesc">The blockchain address to which the sender directs funds.</div>
+      <div class="frow"><span class="fn">network_id</span><span class="ft">string</span><span class="fn-req">req</span></div>
+      <div class="fdesc">Network identifier, e.g. ethereum-mainnet, base-mainnet, solana-mainnet.</div>
+      <div class="frow"><span class="fn">account_identifier</span><span class="ft">string</span><span class="fn-opt">optional</span></div>
+      <div class="fdesc">Memo or destination tag — required for networks that multiplex addresses (e.g. XRP, Stellar).</div>
+      <div class="frow"><span class="fn">type</span><span class="ft">enum</span><span class="fn-en">static | unique</span></div>
+      <div class="fdesc">static = permanent per wallet. unique = generated per request for per-sender tracking.</div>
+    </div>
+
+    <!-- STAKING_POSITION -->
+    <div class="ent">
+      <div class="ent-hd" style="background:#1a1f2e;color:#a5b4fc;border-bottom:2px solid #6366f1">STAKING_POSITION <span class="htag" style="background:#312e81;color:#c7d2fe">staking lifecycle</span></div>
+      <div class="fdesc">Represents an active or historical staking commitment on a Wallet. Initiated via the Stake API; tracked via activity_id and transaction_id. Supports ETH and SOL. ETH: minimum 32 ETH per validator, maximum 1,800 ETH logical target, partial unstaking with 1 ETH minimum. SOL: full stake/unstake only, activates at epoch boundaries, withdrawal in 2–4 days. Rewards continue accruing during unbonding period.</div>
+      <div class="frow"><span class="fn">transaction_id</span><span class="ft">string</span><span class="fn-pk">PK</span></div>
+      <div class="frow"><span class="fn">activity_id</span><span class="ft">string</span><span class="fn-fk">FK → ACTIVITY</span></div>
+      <div class="frow"><span class="fn">wallet_id</span><span class="ft">string</span><span class="fn-fk">FK → WALLET</span></div>
+      <div class="frow"><span class="fn">portfolio_id</span><span class="ft">string</span><span class="fn-fk">FK → PORTFOLIO</span></div>
+      <div class="frow"><span class="fn">amount</span><span class="ft">decimal</span><span class="fn-req">req</span></div>
+      <div class="fdesc">Amount staked. ETH min 32, SOL full amounts only.</div>
+      <div class="frow"><span class="fn">status</span><span class="ft">enum</span><span class="fn-en">PENDING | BONDING | ACTIVE | UNBONDING | COMPLETED</span></div>
+      <div class="fdesc">ETH: activation depends on validator queue. SOL: activates at epoch boundary.</div>
+      <div class="frow"><span class="fn">asset</span><span class="ft">string</span><span class="fn-req">req</span></div>
+      <div class="fdesc">Currently ETH or SOL only.</div>
+    </div>
+
+    <!-- COMMISSION -->
+    <div class="ent">
+      <div class="ent-hd eh-com">COMMISSION <span class="htag" style="background:#57534e;color:#d6d3d1">portfolio config</span></div>
+      <div class="fdesc">Fee model configuration for a Portfolio. Accessed per portfolio and optionally per trading pair. The rate is expressed as a decimal fraction (15bps = 0.0015). Trading volume drives tier thresholds.</div>
+      <div class="frow"><span class="fn">type</span><span class="ft">enum</span><span class="fn-en">all_in | cost_plus</span></div>
+      <div class="fdesc">all_in: single all-inclusive rate. cost_plus: base rate plus pass-through exchange fees.</div>
+      <div class="frow"><span class="fn">rate</span><span class="ft">decimal</span><span class="fn-req">req</span></div>
+      <div class="fdesc">Commission rate as decimal fraction. e.g. 0.0015 = 15 basis points.</div>
+      <div class="frow"><span class="fn">trading_volume</span><span class="ft">decimal</span><span class="fn-req">req</span></div>
+      <div class="fdesc">Average 30-day trading volume over past 90 days (90-day sum ÷ 3). Used for tier calculation.</div>
+    </div>
+
+  </div><!-- end entity-grid Prime -->
+
+  <!-- Relationship table Prime -->
+  <p class="section-label">Prime API — Relationship Model</p>
+  <table class="rel-table" style="margin-bottom:28px">
+    <thead><tr><th>From</th><th>To</th><th>Cardinality</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td>ORGANIZATION</td><td>ENTITY</td><td>1 : many</td><td>One organisation has one or more entities (business units / legal entities)</td></tr>
+      <tr><td>ENTITY</td><td>PORTFOLIO</td><td>1 : many</td><td>One entity holds one or more portfolios for asset segregation</td></tr>
+      <tr><td>PORTFOLIO</td><td>WALLET</td><td>1 : many</td><td>One portfolio contains many wallets, each holding a single asset on a single network</td></tr>
+      <tr><td>WALLET</td><td>WALLET_BALANCE</td><td>1 : 1</td><td>Each wallet has a single balance object with full sub-bucket breakdown</td></tr>
+      <tr><td>PORTFOLIO</td><td>ORDER</td><td>1 : many</td><td>Orders are scoped to a portfolio; retrieval is via portfolio_id path parameter</td></tr>
+      <tr><td>PORTFOLIO</td><td>COMMISSION</td><td>1 : 1</td><td>Each portfolio has a commission configuration, optionally per product_id</td></tr>
+      <tr><td>PORTFOLIO</td><td>ACTIVITY</td><td>1 : many</td><td>All significant events in a portfolio generate an auditable Activity record</td></tr>
+      <tr><td>WALLET</td><td>DEPOSIT_ADDRESS</td><td>1 : many</td><td>Each wallet has one static address plus on-demand unique addresses per network</td></tr>
+      <tr><td>WALLET</td><td>STAKING_POSITION</td><td>1 : many</td><td>ETH and SOL wallets can have active staking positions (ETH min 32, SOL full amounts)</td></tr>
+      <tr><td>STAKING_POSITION</td><td>ACTIVITY</td><td>1 : 1</td><td>Each stake/unstake operation produces an Activity for approval and tracking</td></tr>
+    </tbody>
+  </table>
+
+</div><!-- end Prime section -->
+
+<!-- ===== INTEGRATION PATTERNS ===== -->
+<div class="api-section">
+  <div class="api-header">
+    <span class="api-badge" style="background:#334155;color:#94a3b8">Both APIs</span>
+    <h2>Key Integration Patterns</h2>
+  </div>
+  <div class="cards">
+    <div class="card">
+      <h3>ID Prefix Pattern (CDP v2)</h3>
+      <p style="font-size:.77rem;color:#94a3b8">Coinbase CDP uses typed prefixes on IDs: <code style="color:#7dd3fc">account_</code>, <code style="color:#7dd3fc">entity_</code>, <code style="color:#7dd3fc">customer_</code>. The prefix encodes entity type in the ID itself, allowing callers to determine the type without an extra lookup. Prime uses bare UUIDs — entity type is inferred from API path context.</p>
+    </div>
+    <div class="card">
+      <h3>Polymorphic Ownership (CDP v2)</h3>
+      <p style="font-size:.77rem;color:#94a3b8">The <code style="color:#7dd3fc">owner</code> field on Account encodes both the ID and type. <code style="color:#7dd3fc">entity_&lt;uuid&gt;</code> = organisation; <code style="color:#7dd3fc">customer_&lt;uuid&gt;</code> = individual customer. No join required to determine owner type — just parse the prefix.</p>
+    </div>
+    <div class="card">
+      <h3>Quote-then-Execute (CDP v2 Transfer)</h3>
+      <p style="font-size:.77rem;color:#94a3b8">Transfers are created in <code style="color:#7dd3fc">quoted</code> state with a fee estimate and an expiry window (typically 10–15 min). Callers review the quote, then call <code style="color:#7dd3fc">/execute</code>. Set <code style="color:#7dd3fc">execute: true</code> at creation to skip the review step. Expired quotes must be recreated.</p>
+    </div>
+    <div class="card">
+      <h3>Wallet Type Selection (Prime)</h3>
+      <p style="font-size:.77rem;color:#94a3b8"><strong style="color:#6ee7b7">TRADING</strong>: funds needed for active order flow. <strong style="color:#fde68a">VAULT</strong>: long-term cold storage with withdrawal controls. <strong style="color:#bae6fd">ONCHAIN</strong>: DeFi / direct onchain settlement. <strong style="color:#ddd6fe">QC</strong>: regulated custody arrangement. Balance availability differs by type — TRADING funds are immediately available; VAULT requires withdrawal workflow.</p>
+    </div>
+    <div class="card">
+      <h3>Balance Sub-buckets (Prime)</h3>
+      <p style="font-size:.77rem;color:#94a3b8"><strong style="color:#5eead4">amount</strong> = gross total. Subtract <strong style="color:#5eead4">holds</strong> for funds available to trade. <strong style="color:#5eead4">withdrawable_amount</strong> = net moveable. Staking wallets add <strong style="color:#5eead4">bonded</strong>, <strong style="color:#5eead4">unbonding</strong>, and <strong style="color:#5eead4">claimable_rewards</strong> buckets. Use <strong style="color:#5eead4">fiat_amount</strong> for USD-equivalent portfolio valuation.</p>
+    </div>
+    <div class="card">
+      <h3>Metadata Pass-through (CDP v2)</h3>
+      <p style="font-size:.77rem;color:#94a3b8">Both Transfers and DepositDestinations accept up to 10 key-value metadata pairs (keys ≤40 chars, values ≤500 chars). Metadata persists through the full lifecycle and appears on webhooks — useful for carrying internal reference IDs without API changes.</p>
+    </div>
+    <div class="card">
+      <h3>Idempotency</h3>
+      <p style="font-size:.77rem;color:#94a3b8">CDP v2 Transfers accept an <code style="color:#7dd3fc">X-Idempotency-Key</code> header (≤128 chars) to prevent duplicate processing on retry. Prime Orders accept a <code style="color:#7dd3fc">client_order_id</code> field for the same purpose. Always set these on creation requests in retry loops.</p>
+    </div>
+    <div class="card">
+      <h3>DepositDestination Subtype Pattern</h3>
+      <p style="font-size:.77rem;color:#94a3b8">The parent object holds shared fields; type-specific fields live in a discriminated sub-object. <code style="color:#7dd3fc">type=crypto</code> → network + address fields present. <code style="color:#7dd3fc">type=fiat</code> → bank details present. This table-per-type pattern is extensible — future rails add new subtype fields without changing the parent schema.</p>
+    </div>
+  </div>
+</div>
+
+<footer>Coinbase CDP API v2 · Coinbase Prime API · Source: docs.cdp.coinbase.com · Generated 2026-07-22</footer>
+</div>
+</body>
+</html>
