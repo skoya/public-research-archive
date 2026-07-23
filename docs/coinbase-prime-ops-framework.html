@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coinbase Prime — Ops &amp; Controls Framework</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0f172a;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;line-height:1.6}
+h1{font-size:1.5rem;font-weight:700;color:#f8fafc;letter-spacing:-0.02em}
+h2{font-size:1.05rem;font-weight:700;color:#f1f5f9;margin-bottom:14px}
+h3{font-size:.85rem;font-weight:700;color:#cbd5e1;margin:20px 0 10px}
+h4{font-size:.75rem;font-weight:700;color:#94a3b8;margin:14px 0 8px;text-transform:uppercase;letter-spacing:.06em}
+p{color:#94a3b8;font-size:.82rem;line-height:1.65;margin-bottom:10px}
+.subtitle{font-size:.8rem;color:#64748b;margin-bottom:4px}
+.breadcrumb{font-size:.72rem;color:#475569;margin-bottom:20px}
+.breadcrumb a{color:#3b82f6;text-decoration:none}
+.breadcrumb a:hover{text-decoration:underline}
+.layout{display:flex;gap:0}
+.sidebar{width:220px;flex-shrink:0;position:sticky;top:0;height:100vh;overflow-y:auto;border-right:1px solid #1e293b;padding:24px 0}
+.sidebar-title{font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#475569;padding:0 16px;margin-bottom:10px}
+.sidebar nav a{display:block;padding:6px 16px;font-size:.75rem;color:#64748b;text-decoration:none;border-left:2px solid transparent;transition:all .15s}
+.sidebar nav a:hover{color:#e2e8f0;background:#1e293b;border-left-color:#3b82f6}
+.sidebar nav a.active{color:#93c5fd;border-left-color:#3b82f6}
+.main{flex:1;padding:32px 40px;min-width:0}
+.section{margin-bottom:52px;scroll-margin-top:24px}
+.section-header{display:flex;align-items:center;gap:12px;margin-bottom:20px;padding-bottom:10px;border-bottom:2px solid #1e293b}
+.sec-num{font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:3px 10px;border-radius:4px;background:#1e3a5f;color:#93c5fd;white-space:nowrap}
+.card{background:#1e293b;border:1px solid #334155;border-radius:8px;padding:16px 18px;margin-bottom:16px}
+.card h3{margin-top:0}
+.wt-table{width:100%;border-collapse:collapse;font-size:.78rem;margin-bottom:20px}
+.wt-table th{background:#1e293b;color:#64748b;padding:8px 12px;text-align:left;font-size:.65rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;border-bottom:2px solid #334155}
+.wt-table td{padding:9px 12px;border-bottom:1px solid #1e293b;vertical-align:top;color:#cbd5e1}
+.wt-table tr:hover td{background:#1a2540}
+.wt-table td:first-child{font-weight:600;color:#e2e8f0}
+.yes{color:#22c55e;font-weight:700}
+.no{color:#ef4444}
+.partial{color:#f59e0b;font-weight:600}
+/* Flow diagrams */
+.flow{display:flex;align-items:center;flex-wrap:wrap;gap:2px;margin:14px 0;padding:14px;background:#0b1120;border-radius:6px;border:1px solid #1e293b}
+.flow-step{background:#1e293b;border:1px solid #334155;border-radius:5px;padding:6px 10px;font-size:.7rem;color:#e2e8f0;text-align:center;min-width:80px}
+.flow-step.actor{background:#1e3a5f;border-color:#2563eb;color:#93c5fd}
+.flow-step.system{background:#064e3b;border-color:#059669;color:#6ee7b7}
+.flow-step.decision{background:#78350f;border-color:#d97706;color:#fde68a}
+.flow-step.risk{background:#4c0519;border-color:#dc2626;color:#fca5a5}
+.flow-step.success{background:#052e16;border-color:#22c55e;color:#4ade80}
+.flow-arrow{color:#475569;font-size:1rem;padding:0 4px;align-self:center;flex-shrink:0}
+.flow-col{display:flex;flex-direction:column;gap:6px;align-items:center}
+.flow-branch{display:flex;flex-direction:column;gap:4px}
+/* Scenario cards */
+.scenario-card{background:#1e293b;border:1px solid #334155;border-radius:8px;margin-bottom:20px;overflow:hidden}
+.scenario-hd{background:#0f172a;border-bottom:1px solid #334155;padding:12px 16px;display:flex;align-items:center;gap:14px}
+.scenario-id{font-size:.65rem;font-weight:700;letter-spacing:.1em;color:#475569;text-transform:uppercase;white-space:nowrap}
+.scenario-badge{font-size:.62rem;font-weight:700;padding:2px 8px;border-radius:3px;white-space:nowrap}
+.sb-must{background:#1e3a5f;color:#93c5fd}
+.sb-rec{background:#064e3b;color:#6ee7b7}
+.scenario-title{font-size:.9rem;font-weight:600;color:#f1f5f9}
+.scenario-body{padding:16px 18px}
+.sc-meta{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;font-size:.75rem}
+.sc-meta-item label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#475569;display:block;margin-bottom:2px}
+.sc-meta-item p{color:#94a3b8;margin:0}
+.steps-ol{margin:0;padding-left:18px}
+.steps-ol li{font-size:.78rem;color:#cbd5e1;margin-bottom:5px;line-height:1.5}
+.pass-box{background:#052e16;border:1px solid #22c55e;border-radius:4px;padding:10px 13px;font-size:.75rem;color:#4ade80;margin-top:12px;display:flex;gap:8px}
+.evidence-box{background:#1a1f2e;border:1px solid #334155;border-radius:4px;padding:8px 13px;font-size:.72rem;color:#64748b;margin-top:8px}
+/* Risk table */
+.risk-H{color:#ef4444;font-weight:700}
+.risk-M{color:#f59e0b;font-weight:700}
+.risk-L{color:#22c55e;font-weight:700}
+.risk-C{color:#f472b6;font-weight:700}
+/* Checklist */
+.checklist{list-style:none;margin:0;padding:0}
+.checklist li{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid #1e293b;font-size:.78rem;color:#cbd5e1}
+.checklist li:last-child{border-bottom:none}
+.cb{width:16px;height:16px;border:2px solid #334155;border-radius:3px;flex-shrink:0;margin-top:1px}
+.checklist-section{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#3b82f6;margin:16px 0 6px;padding-bottom:4px;border-bottom:1px solid #1e3a5f}
+/* Tags */
+.tag{display:inline-block;padding:2px 8px;border-radius:9999px;font-size:.7rem;font-weight:600;margin:2px}
+.t-red{background:#4c0519;color:#fca5a5}
+.t-blue{background:#1e3a5f;color:#93c5fd}
+.t-green{background:#064e3b;color:#6ee7b7}
+.t-amber{background:#78350f;color:#fde68a}
+.t-slate{background:#334155;color:#cbd5e1}
+.t-purple{background:#3b1f6f;color:#c4b5fd}
+/* Callouts */
+.callout{border-radius:6px;padding:12px 15px;margin:12px 0;font-size:.78rem;border-left:3px solid}
+.callout.warn{background:#292100;border-color:#f59e0b;color:#fde68a}
+.callout.danger{background:#2c0a0a;border-color:#ef4444;color:#fca5a5}
+.callout.info{background:#0c1f3f;border-color:#3b82f6;color:#93c5fd}
+.callout.success{background:#052e16;border-color:#22c55e;color:#6ee7b7}
+.callout strong{font-weight:700}
+/* Workflow steps */
+.workflow-steps{counter-reset:step;list-style:none;padding:0;margin:0}
+.workflow-steps li{counter-increment:step;display:flex;gap:12px;margin-bottom:10px;font-size:.78rem;color:#cbd5e1}
+.workflow-steps li::before{content:counter(step);background:#1e3a5f;color:#93c5fd;font-weight:700;font-size:.65rem;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+footer{text-align:center;color:#334155;font-size:.7rem;padding:24px;border-top:1px solid #1e293b;margin-top:40px}
+@media(max-width:760px){.sidebar{display:none}.main{padding:20px}}
+</style>
+</head>
+<body>
+<div class="layout">
+<!-- Sidebar -->
+<div class="sidebar">
+  <div class="sidebar-title">Coinbase Prime</div>
+  <nav>
+    <a href="#exec-summary">Executive Summary</a>
+    <a href="#approval-arch">Approval Architecture</a>
+    <a href="#yubikey">YubiKey Lifecycle</a>
+    <a href="#workflows">Approval Workflows</a>
+    <a href="#human-roles">Human Roles</a>
+    <a href="#surface">Surface Laptop Controls</a>
+    <a href="#onchain">On-Chain Protection</a>
+    <a href="#risk-register">Risk Register</a>
+    <a href="#scenario-library">Scenario Library</a>
+    <a href="#checklist">Pre-Go-Live Checklist</a>
+    <a href="#gaps">Gaps &amp; Recommendations</a>
+  </nav>
+  <div style="margin-top:24px;padding:0 16px">
+    <a href="coinbase-api-erd.html" style="font-size:.7rem;color:#475569;text-decoration:none;display:flex;align-items:center;gap:5px">← ERD Reference</a>
+    <a href="coinbase-prime-simulator.html" style="font-size:.7rem;color:#475569;text-decoration:none;display:flex;align-items:center;gap:5px;margin-top:4px">← API Simulator</a>
+    <a href="index.html" style="font-size:.7rem;color:#475569;text-decoration:none;display:flex;align-items:center;gap:5px;margin-top:4px">← Archive Index</a>
+  </div>
+</div>
+
+<!-- Main content -->
+<div class="main">
+<div class="breadcrumb"><a href="index.html">Research Archive</a> › <a href="coinbase-api-erd.html">Coinbase Prime</a> › Ops &amp; Controls Framework</div>
+<h1>Coinbase Prime — Ops &amp; Controls Framework</h1>
+<p class="subtitle">Approval workflows · YubiKey lifecycle · Human processes · On-chain transfer protection · Risk register · Pre-custody scenario library</p>
+
+<!-- ===== 1. EXECUTIVE SUMMARY ===== -->
+<div class="section" id="exec-summary">
+<div class="section-header">
+  <span class="sec-num">01</span>
+  <h2>Executive Summary</h2>
+</div>
+<p>This framework defines the minimum operational controls required before placing institutional assets into Coinbase Prime custody. It covers the end-to-end human processes, technology controls, YubiKey hardware token lifecycle, on-chain transfer protections, residual risk register, and a mandatory scenario library that must be executed and signed off before go-live. Target audience: Operations, Information Security, Risk Management, and Legal &amp; Compliance.</p>
+<p>Coinbase Prime provides strong platform-level controls — role-based access separation, multi-party consensus policies, FIDO2 hardware MFA, and video verification for large transfers. However, <strong style="color:#f1f5f9">the platform cannot protect against process failures on the client side</strong>: an insider colluding with a colleague, an approver who approves without checking the destination, a poorly configured quorum that can be met by two people in the same office, or assets placed into custody before the team has been trained and tested. This framework fills that gap.</p>
+<p>The assumed hardware baseline is a <strong style="color:#f1f5f9">company-issued, locked-down Microsoft Surface Laptop</strong> running Windows 11 Enterprise, used exclusively for Coinbase Prime approvals and managed via MDM. YubiKey 5C NFC hardware tokens are the MFA device for all approver accounts. No approval may be performed from a personal device, a shared workstation, or a general-purpose laptop.</p>
+<p>All 12 scenarios in Section 9 must be executed and evidence retained before any real assets are placed in custody. This is a hard gate, not a recommendation.</p>
+<div class="callout warn"><strong>Scope note:</strong> This framework covers operational controls on the client (institution) side. It does not replace Coinbase Prime's own terms, compliance obligations, or security documentation. Always verify current platform behaviour against Coinbase Prime's official help centre and your account team.</div>
+</div>
+
+<!-- ===== 2. APPROVAL ARCHITECTURE ===== -->
+<div class="section" id="approval-arch">
+<div class="section-header">
+  <span class="sec-num">02</span>
+  <h2>Platform Approval Architecture</h2>
+</div>
+<p>Every significant operation on Coinbase Prime — withdrawal, VAULT wallet creation, large transfer — generates an <strong style="color:#f1f5f9">Activity</strong> record. Activities are the audit spine of the platform. An Activity is immutable once created and progresses through a defined lifecycle.</p>
+
+<h3>Activity Lifecycle</h3>
+<div class="flow">
+  <div class="flow-step actor">Initiator<br><span style="font-size:.6rem;color:#64748b">submits request</span></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step system">Activity<br>PENDING</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step actor">Approvers<br><span style="font-size:.6rem;color:#64748b">notified</span></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step decision">Quorum<br>met?</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-col">
+    <div style="display:flex;align-items:center;gap:4px">
+      <div class="flow-step success">APPROVED<br><span style="font-size:.6rem">→ executes</span></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:4px">
+      <div class="flow-step risk">REJECTED<br><span style="font-size:.6rem">hold released</span></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:4px">
+      <div class="flow-step" style="background:#1c1917;border-color:#57534e;color:#a8a29e">EXPIRED<br><span style="font-size:.6rem">timeout → no action</span></div>
+    </div>
+  </div>
+</div>
+
+<h3>Transfer Approval Tiers</h3>
+<table class="wt-table">
+<thead><tr><th>Tier</th><th>Amount Threshold</th><th>Approvals Required</th><th>Threshold Type</th><th>Video Verification</th></tr></thead>
+<tbody>
+<tr><td>Auto-approve</td><td>&lt; $10,000</td><td>None — executes immediately</td><td>—</td><td class="no">No</td></tr>
+<tr><td>Standard consensus</td><td>$10,000 – $1,000,000</td><td>MAJORITY of assigned approvers</td><td>MAJORITY</td><td class="no">No</td></tr>
+<tr><td>Enhanced consensus</td><td>$1,000,000 – $10,000,000</td><td>ALL assigned approvers</td><td>ALL</td><td class="no">No</td></tr>
+<tr><td>Video verification</td><td>&gt; $10,000,000</td><td>ALL assigned approvers</td><td>ALL</td><td class="yes">Yes — Authorized Signatories</td></tr>
+</tbody>
+</table>
+<div class="callout info"><strong>Configurable:</strong> Tier thresholds are configured per portfolio via the Consensus Policy. The values above are illustrative defaults. Your account team can advise on appropriate thresholds for your asset size and transaction frequency. Lower thresholds = more approvals = stronger controls.</div>
+
+<h3>Platform Role Separation</h3>
+<table class="wt-table">
+<thead><tr><th>Role</th><th>Can Initiate</th><th>Can Approve</th><th>Can Trade</th><th>Manage Team</th><th>Access Level</th></tr></thead>
+<tbody>
+<tr><td>Administrator</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td>Entity or Portfolio</td></tr>
+<tr><td>Authorized Signatory</td><td class="yes">✓</td><td class="yes">✓</td><td class="no">—</td><td class="no">—</td><td>Entity or Portfolio</td></tr>
+<tr><td>Full Trader</td><td class="yes">✓</td><td class="no">—</td><td class="yes">✓</td><td class="no">—</td><td>Portfolio</td></tr>
+<tr><td>Initiator</td><td class="yes">✓</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td>Portfolio</td></tr>
+<tr><td>Approver</td><td class="no">—</td><td class="yes">✓</td><td class="no">—</td><td class="no">—</td><td>Portfolio</td></tr>
+<tr><td>Team Manager</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="yes">✓</td><td>Entity or Portfolio</td></tr>
+<tr><td>Viewer</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td>Portfolio</td></tr>
+</tbody>
+</table>
+<div class="callout warn"><strong>Critical:</strong> The platform enforces role separation, but cannot prevent an Administrator (who holds all rights) from both initiating and approving. Restrict Administrator access to a dedicated ops lead who does not participate in day-to-day transfer approvals. Use Initiator + Approver roles for operational staff.</div>
+</div>
+
+<!-- ===== 3. YUBIKEY LIFECYCLE ===== -->
+<div class="section" id="yubikey">
+<div class="section-header">
+  <span class="sec-num">03</span>
+  <h2>YubiKey Lifecycle Management</h2>
+</div>
+<p>Coinbase Prime requires FIDO2/WebAuthn hardware security keys for approver authentication. The recommended device is the <strong style="color:#f1f5f9">YubiKey 5C NFC</strong> (USB-C connector for Surface Laptop + NFC as backup). Each approver must have two keys: a primary key kept on their person and a backup key stored in a separate, access-controlled location.</p>
+
+<h3>Lifecycle Stages</h3>
+<table class="wt-table">
+<thead><tr><th>Stage</th><th>Responsible Party</th><th>Controls</th><th>Evidence Required</th></tr></thead>
+<tbody>
+<tr>
+  <td><strong>1. Procurement</strong></td>
+  <td>Security Officer</td>
+  <td>Order direct from yubico.com only. Never use third-party resellers — supply chain integrity cannot be verified. Order 2 × YubiKey 5C NFC per approver. Verify tamper-evident packaging on receipt. Log serial numbers before distribution.</td>
+  <td>Purchase order + delivery receipt + serial number log</td>
+</tr>
+<tr>
+  <td><strong>2. Registration</strong></td>
+  <td>Each Approver (self-service)</td>
+  <td>Each approver must self-register both their primary and backup key against their own Coinbase Prime account. An Administrator <em>cannot</em> pre-register keys on behalf of another user — Coinbase requires the account owner to be authenticated before adding a security key. Registration must occur on the approved Surface Laptop, on the corporate network, with Security Officer present.</td>
+  <td>Coinbase account activity log screenshot showing key registration event + date/time</td>
+</tr>
+<tr>
+  <td><strong>3. Distribution</strong></td>
+  <td>Security Officer + IT</td>
+  <td>Primary key: handed to approver in person with ID check, witnessed and signed. Backup key: placed in company safe or secure cabinet under dual-control (two keyholders required to access). Never deliver primary and backup keys in the same package or hand-off session.</td>
+  <td>Signed distribution log (approver, witness, date, serial numbers)</td>
+</tr>
+<tr>
+  <td><strong>4. Storage</strong></td>
+  <td>Approver (primary) + Security Officer (backup)</td>
+  <td>Primary: on approver's person or in their locked desk safe during working hours. Backup: company safe at a different physical location from primary (different floor or building preferred). Serial number of each stored key visible on the container label.</td>
+  <td>Quarterly physical inventory check — Security Officer verifies both keys per approver are accounted for</td>
+</tr>
+<tr>
+  <td><strong>5. Annual Rotation</strong></td>
+  <td>Security Officer</td>
+  <td>All keys rotated annually at minimum. Early rotation triggered by: role change, suspected compromise, employment termination, or failed physical inventory. New keys registered before old keys revoked — no gap in approver coverage.</td>
+  <td>Rotation log (date, approver, reason, new serial numbers)</td>
+</tr>
+<tr>
+  <td><strong>6. Offboarding</strong></td>
+  <td>IT + Security Officer + People team</td>
+  <td>Coinbase Prime account deactivated by Administrator before device and key handover. IT collects both keys on last day of employment. Keys destroyed per NIST 800-88 (physical destruction preferred for hardware tokens; document destruction method). Quorum check performed — confirm remaining approvers still meet MAJORITY threshold.</td>
+  <td>Signed offboarding checklist (IT, Security, manager). Destruction certificate. Updated quorum calculation.</td>
+</tr>
+<tr>
+  <td><strong>7. Lost Key Recovery</strong></td>
+  <td>Security Officer</td>
+  <td>Immediate escalation to Security Officer. Approver temporarily suspended from quorum pending key replacement (recalculate remaining quorum). Security Officer contacts Coinbase Prime support to flag the account. IT opens company safe (dual-control) to retrieve backup key. Approver activates backup as primary. New physical key ordered from Yubico. Incident report filed.</td>
+  <td>Incident report. Time-stamped escalation log. Target SLA: backup operational within 4 business hours; new primary ordered within 2 business days.</td>
+</tr>
+</tbody>
+</table>
+
+<div class="callout danger"><strong>Supply chain warning:</strong> There have been documented cases of counterfeit and tampered YubiKeys sold via third-party marketplaces (Amazon Marketplace, eBay). Always order direct from yubico.com and verify the tamper-evident hologram and packaging on receipt. A compromised key from the factory could bypass MFA entirely.</div>
+</div>
+
+<!-- ===== 4. APPROVAL WORKFLOWS ===== -->
+<div class="section" id="workflows">
+<div class="section-header">
+  <span class="sec-num">04</span>
+  <h2>Approval Workflows</h2>
+</div>
+
+<div class="card">
+<h3>Workflow A — Standard Transfer (&lt; $1M)</h3>
+<p style="font-size:.75rem;color:#64748b;margin-bottom:12px">MAJORITY consensus · 24-hour window · No video requirement</p>
+<div class="flow">
+  <div class="flow-step actor">Initiator<br><span style="font-size:.6rem">Surface + YubiKey</span></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step system">Submit withdrawal<br><span style="font-size:.6rem">whitelisted address</span></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step system">Activity PENDING<br><span style="font-size:.6rem">hold applied</span></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step actor">Out-of-band<br><span style="font-size:.6rem">Signal/SMS confirm</span></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step actor">Approver(s)<br><span style="font-size:.6rem">Surface + YubiKey login</span></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step decision">Verify details<br><span style="font-size:.6rem">addr + amount + ref</span></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step success">MAJORITY met<br><span style="font-size:.6rem">→ APPROVED</span></div>
+</div>
+<ol class="workflow-steps">
+  <li>Initiator logs into Coinbase Prime from approved Surface Laptop using credentials + YubiKey</li>
+  <li>Initiator selects portfolio and wallet, submits withdrawal to a pre-approved whitelisted address with amount and reference memo</li>
+  <li>Platform creates Activity in PENDING state; hold is immediately applied to wallet balance</li>
+  <li>Initiator sends an out-of-band confirmation (Signal message to approver group) containing: transfer amount, destination address last 6 characters, and business reference — <em>not</em> a link, not an email, not WhatsApp</li>
+  <li>Each Approver logs into Coinbase Prime from their approved Surface Laptop using credentials + YubiKey (FIDO2 WebAuthn)</li>
+  <li>Approver opens the pending Activity and checks: (a) amount matches the out-of-band Signal confirmation, (b) first 6 and last 6 characters of the destination address match, (c) memo/reference is correct</li>
+  <li>Approver clicks Approve. Once MAJORITY threshold is met, Activity status moves to APPROVED and transfer queues</li>
+  <li>Initiator confirms on-chain execution confirmation within 30 minutes and logs reference in reconciliation system</li>
+</ol>
+<div class="callout info">Controls: Role separation (Initiator ≠ Approver) · YubiKey FIDO2 authentication · Out-of-band confirmation · Pre-approved address whitelist · 24-hour expiry window</div>
+</div>
+
+<div class="card">
+<h3>Workflow B — Enhanced Consensus Transfer ($1M – $10M)</h3>
+<p style="font-size:.75rem;color:#64748b;margin-bottom:12px">ALL consensus required · 8-hour window (shortened) · Recorded verbal confirmation</p>
+<div class="flow">
+  <div class="flow-step actor">Initiator</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step system">Submit + notify<br><span style="font-size:.6rem">Security Officer</span></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step actor">Lead Approver<br><span style="font-size:.6rem">calls Initiator</span></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step decision">Verbal verify<br><span style="font-size:.6rem">amount + destination</span></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step actor">ALL Approvers<br><span style="font-size:.6rem">dual-source check</span></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step success">ALL approved<br><span style="font-size:.6rem">→ executes</span></div>
+</div>
+<p>All steps from Workflow A apply, plus:</p>
+<ol class="workflow-steps">
+  <li>Security Officer is notified in advance of the transfer submission (minimum 2 hours notice where possible)</li>
+  <li>Lead Approver calls the Initiator on a recorded line before approving — verbally confirms: amount, destination counterparty name (not just address), and business purpose</li>
+  <li>Each Approver must verify the destination address from a second independent source (printed instruction document, contract PDF, or system of record) — NOT from an email, NOT from the browser tab alongside the Coinbase Prime approval screen</li>
+  <li>ALL approvers must approve — a single missing approval blocks execution until the 8-hour window expires</li>
+  <li>Post-transfer: Finance performs same-day reconciliation check and signs off</li>
+</ol>
+<div class="callout warn">The shortened 8-hour window is intentional — it reduces the exposure window for a fraudulent PENDING Activity. Ensure all approvers are reachable before submission.</div>
+</div>
+
+<div class="card">
+<h3>Workflow C — Video Verification Transfer (&gt; $10M)</h3>
+<p style="font-size:.75rem;color:#64748b;margin-bottom:12px">ALL consensus + video verification · Coordinated schedule · Minimum 48h notice to Coinbase</p>
+<div class="flow">
+  <div class="flow-step actor">Planning<br><span style="font-size:.6rem">48h advance notice</span></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step system">Submit request<br><span style="font-size:.6rem">Activity PENDING</span></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step actor">Coinbase contacts<br><span style="font-size:.6rem">Auth. Signatories</span></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step decision">Video call<br><span style="font-size:.6rem">live ID verify</span></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step system">Coinbase enables<br><span style="font-size:.6rem">approval step</span></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step actor">ALL Approvers<br><span style="font-size:.6rem">approve</span></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step success">Executes<br><span style="font-size:.6rem">→ recon same day</span></div>
+</div>
+<ol class="workflow-steps">
+  <li>Transfer is planned in advance — minimum 48 hours notice to Coinbase Prime account team (primeops@coinbase.com)</li>
+  <li>Initiator submits the request; Activity is created in PENDING state but approval is gated pending video verification</li>
+  <li>Coinbase Compliance team contacts the Authorized Signatories to schedule a video call</li>
+  <li>Live video call: Authorized Signatory presents identity documentation, confirms transfer intent, amount, and destination counterparty</li>
+  <li>Coinbase unlocks the approval step after successful video verification</li>
+  <li>ALL assigned Approvers approve the Activity on the platform using Surface Laptop + YubiKey</li>
+  <li>CFO or COO notified of transfer completion; Finance performs same-day reconciliation within 2 hours</li>
+</ol>
+<div class="callout danger"><strong>Deepfake risk:</strong> Video verification is the highest-assurance control on the platform, but emerging deepfake technology is a credible threat vector. Brief Authorized Signatories to expect Coinbase to ask challenge questions and use liveness checks. Any unusual video call behaviour (poor audio sync, unresponsive answers, unusual scheduling pressure) should trigger immediate suspension of the transfer.</div>
+</div>
+</div>
+
+<!-- ===== 5. HUMAN ROLES ===== -->
+<div class="section" id="human-roles">
+<div class="section-header">
+  <span class="sec-num">05</span>
+  <h2>Human Roles &amp; Responsibilities</h2>
+</div>
+
+<table class="wt-table">
+<thead><tr><th>Organisational Role</th><th>Coinbase Prime Role</th><th>Responsibilities</th><th>Segregation Rule</th><th>Min Headcount</th></tr></thead>
+<tbody>
+<tr>
+  <td><strong>Custody Operations Lead</strong></td>
+  <td><span class="tag t-slate">Administrator</span></td>
+  <td>Owns entity configuration. Manages team roster, API keys, and consensus policy. Does NOT approve day-to-day transfers.</td>
+  <td>Must not be in the same management line as Transfer Approvers. Never acts as Initiator or Approver for live transfers.</td>
+  <td>1 (+ 1 Deputy Administrator)</td>
+</tr>
+<tr>
+  <td><strong>Transfer Initiator</strong></td>
+  <td><span class="tag t-blue">Initiator</span></td>
+  <td>Submits withdrawal and transfer requests. Prepares out-of-band confirmation for approvers. Monitors execution.</td>
+  <td>Must not be an Approver for the same portfolio. No YubiKey required for initiation (platform allows password MFA), but corporate policy should require it anyway.</td>
+  <td>2 minimum (cross-cover)</td>
+</tr>
+<tr>
+  <td><strong>Transfer Approver</strong></td>
+  <td><span class="tag t-amber">Approver</span></td>
+  <td>Reviews pending Activities. Verifies amount, destination address, and business purpose using dual-source check. Approves or rejects.</td>
+  <td>Must not report to the Initiator (no direct reporting line). At least 1 must be in a different geographic location. No Approver may also hold an API key with TRANSFER scope on the same portfolio.</td>
+  <td>3 minimum (4 recommended — 1 redundant for resilience)</td>
+</tr>
+<tr>
+  <td><strong>Authorized Signatory</strong></td>
+  <td><span class="tag t-purple">Authorized Signatory</span></td>
+  <td>Participates in video verification for transfers above $10M. Entity-level access. Rarely operational — activated for large transfers only.</td>
+  <td>Must be VP-level or above. Must not be the same person as an operational Initiator or Approver (seniority separation).</td>
+  <td>2 minimum</td>
+</tr>
+<tr>
+  <td><strong>Security Officer</strong></td>
+  <td><span class="tag t-slate">Team Manager + Viewer</span></td>
+  <td>Manages YubiKey lifecycle, reviews audit log, monitors API key access, approves new on-chain addresses, runs scenario library testing. No trading or transfer capability.</td>
+  <td>Cannot also be an Approver. Cannot hold an API key with TRADE or TRANSFER scope.</td>
+  <td>1 (+ deputy)</td>
+</tr>
+<tr>
+  <td><strong>IT Administrator</strong></td>
+  <td>No Coinbase Prime access</td>
+  <td>Manages Surface Laptops, YubiKey procurement and destruction, MDM/EDR configuration and compliance. Responds to lost-key incidents.</td>
+  <td>Must not have Coinbase Prime credentials — IT access to the approval device does not grant Coinbase access.</td>
+  <td>1 (IT team)</td>
+</tr>
+</tbody>
+</table>
+
+<h3>Geographic Distribution Requirements</h3>
+<div class="card">
+<p>At minimum, one Transfer Approver must be located in a different physical office or country from the other approvers. This provides:</p>
+<ul style="font-size:.78rem;color:#94a3b8;padding-left:18px;margin-top:8px">
+  <li style="margin-bottom:6px"><strong style="color:#e2e8f0">Operational resilience</strong> — a local incident (fire, power outage, evacuation) cannot simultaneously prevent all approvals</li>
+  <li style="margin-bottom:6px"><strong style="color:#e2e8f0">Jurisdiction diversification</strong> — a single legal hold order in one jurisdiction cannot freeze the entire quorum</li>
+  <li style="margin-bottom:6px"><strong style="color:#e2e8f0">Coercion resistance</strong> — physical coercion of one group of approvers in the same location cannot meet the threshold alone</li>
+</ul>
+</div>
+</div>
+
+<!-- ===== 6. SURFACE LAPTOP ===== -->
+<div class="section" id="surface">
+<div class="section-header">
+  <span class="sec-num">06</span>
+  <h2>Surface Laptop Security Configuration</h2>
+</div>
+<p>The approval Surface Laptop must be treated as a dedicated security device — not a general-purpose workstation. The following controls apply to all devices used for Coinbase Prime approvals.</p>
+
+<table class="wt-table">
+<thead><tr><th>Control</th><th>Required Standard</th><th>Verification Method</th><th>Review Frequency</th></tr></thead>
+<tbody>
+<tr><td><strong>OS</strong></td><td>Windows 11 Enterprise only (not Home or Pro). CIS Benchmark Level 2 applied.</td><td>MDM compliance report</td><td>Monthly</td></tr>
+<tr><td><strong>Full-disk encryption</strong></td><td>BitLocker enabled, TPM 2.0 bound. Recovery key escrowed in corporate key store — not stored on the device.</td><td>BitLocker status report via MDM</td><td>Quarterly</td></tr>
+<tr><td><strong>Secure Boot</strong></td><td>Enabled, UEFI only. Boot order locked. BIOS password set.</td><td>BIOS settings screenshot during audit</td><td>Quarterly</td></tr>
+<tr><td><strong>Network</strong></td><td>Dedicated VLAN or physically separate network segment for approval devices. Web proxy allowlist: Coinbase Prime domains only. No general internet browsing.</td><td>Firewall rule review</td><td>Monthly</td></tr>
+<tr><td><strong>DNS</strong></td><td>Corporate DNS. Coinbase Prime domains explicitly allowed. All other crypto exchange and trading domains blocked.</td><td>DNS policy document + spot check</td><td>Quarterly</td></tr>
+<tr><td><strong>Browser</strong></td><td>Microsoft Edge (Chromium) only. No unapproved extensions. Password saving disabled in browser — YubiKey is the sole auth factor. Enterprise policy enforced via MDM.</td><td>MDM browser policy report</td><td>Monthly</td></tr>
+<tr><td><strong>USB device policy</strong></td><td>Only Yubico USB Vendor ID (0x1050) allowlisted. All USB storage devices blocked via MDM/USB device control policy. USB hubs not permitted.</td><td>MDM USB policy report</td><td>Monthly</td></tr>
+<tr><td><strong>Clipboard</strong></td><td>Clipboard access to Coinbase Prime browser tabs disabled via Edge enterprise policy. Approvers must type or manually verify addresses — no paste-from-clipboard during review.</td><td>Edge policy export + demonstration test</td><td>Monthly</td></tr>
+<tr><td><strong>Local admin rights</strong></td><td>Standard user account only. No local administrator rights. Software installation blocked.</td><td>MDM compliance</td><td>Monthly</td></tr>
+<tr><td><strong>Patch SLA</strong></td><td>Critical patches: 24 hours. High: 72 hours. Medium: 30 days.</td><td>Patch compliance report</td><td>Weekly</td></tr>
+<tr><td><strong>EDR</strong></td><td>CrowdStrike Falcon or Microsoft Defender for Endpoint in active prevention mode (not audit mode).</td><td>EDR console — prevention mode confirmed</td><td>Daily alert review</td></tr>
+<tr><td><strong>Screen lock</strong></td><td>Auto-lock after 60 seconds of inactivity. Approval sessions must never be left unattended.</td><td>MDM lock policy</td><td>Monthly</td></tr>
+<tr><td><strong>Session logging</strong></td><td>All browser sessions (URL, timestamps) logged to SIEM. Coinbase Prime login/logout events retained for 12 months minimum.</td><td>SIEM query</td><td>Weekly review</td></tr>
+<tr><td><strong>Physical controls</strong></td><td>Device never taken offsite. Stored in locked cabinet when not in use. Asset tag and serial number registered. IT photographs device for inventory.</td><td>Physical asset register</td><td>Quarterly</td></tr>
+</tbody>
+</table>
+
+<div class="callout warn"><strong>Personal device prohibition:</strong> No exception to the Surface Laptop policy is permitted, including for senior staff. A BYOD exception for a VP or C-level that bypasses these controls is a single point of failure that voids the entire control framework.</div>
+</div>
+
+<!-- ===== 7. ON-CHAIN ===== -->
+<div class="section" id="onchain">
+<div class="section-header">
+  <span class="sec-num">07</span>
+  <h2>On-Chain Transfer Protection</h2>
+</div>
+<p>On-chain transfers carry the highest residual risk of any operation on the platform because they are <strong style="color:#f1f5f9">irreversible</strong>. Once a transaction is broadcast to the blockchain, there is no recall mechanism, no chargeback, and no recourse except pursuing the recipient through legal channels. The controls in this section must be treated as mandatory, not advisory.</p>
+
+<h3>Address Whitelisting Process</h3>
+<p>All on-chain destination addresses must be pre-approved and added to the Coinbase Prime allowlist before any withdrawal is attempted. Adding an address is itself a privileged operation requiring approval.</p>
+<div class="flow">
+  <div class="flow-step actor">Requestor<br><span style="font-size:.6rem">secure form submission</span></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step actor">Security Officer<br><span style="font-size:.6rem">receives via 2 channels</span></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step decision">Dual-source verify<br><span style="font-size:.6rem">char-by-char check</span></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step actor">Admin adds to<br><span style="font-size:.6rem">Coinbase allowlist</span></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step system">Activity: address<br><span style="font-size:.6rem">addition PENDING</span></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step actor">2 Approvers<br><span style="font-size:.6rem">approve addition</span></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step success">Address live<br><span style="font-size:.6rem">for withdrawals</span></div>
+</div>
+
+<h3>Address Verification Protocol</h3>
+<div class="card">
+<p>Before adding or using any on-chain address, the verifier must:</p>
+<ol class="workflow-steps">
+  <li>Receive the address via the primary channel (e.g. secure form, system of record)</li>
+  <li>Receive the same address via a second independent channel (e.g. Signal from the counterparty, printed document, or contract PDF) — NOT email, NOT a forwarded message</li>
+  <li>Compare the addresses character by character at minimum: first 6 characters, last 6 characters, and 3 random positions from the middle</li>
+  <li>Confirm the network/chain matches (BTC address for a BTC transfer, ERC-20 for ETH network, etc.)</li>
+  <li>Have a second person perform the same independent comparison and sign off in the address log</li>
+</ol>
+<div class="callout danger"><strong>Address poisoning:</strong> Attackers monitor blockchain transaction history and generate vanity addresses matching the first and last few characters of frequently-used addresses. They send dust transactions to seed the poisoned address in the target's history. Always use the character-by-character check — never copy an address from transaction history.</div>
+</div>
+
+<h3>VAULT Wallet Policy</h3>
+<div class="card">
+<ul style="font-size:.78rem;color:#94a3b8;padding-left:18px">
+  <li style="margin-bottom:8px">All holdings above <strong style="color:#e2e8f0">$100,000</strong> must be in VAULT wallets, not TRADING wallets</li>
+  <li style="margin-bottom:8px">VAULT withdrawals require a separate Activity approval for every withdrawal — they cannot be automated via API without explicit human approval in the loop</li>
+  <li style="margin-bottom:8px">VAULT wallet creation itself requires an Activity approval — it is not instantaneous</li>
+  <li style="margin-bottom:8px">Never use TRADING wallets for long-term custody of significant assets — TRADING wallets have lower approval friction</li>
+</ul>
+</div>
+
+<h3>On-Chain Risk Matrix</h3>
+<table class="wt-table">
+<thead><tr><th>Scenario</th><th>Likelihood</th><th>Impact</th><th>Control</th><th>Residual Risk</th></tr></thead>
+<tbody>
+<tr><td>Address poisoning — approver approves wrong destination</td><td class="risk-M">Medium</td><td class="risk-C">Critical</td><td>Whitelisting + dual-channel verification + char-by-char check</td><td class="risk-L">Low</td></tr>
+<tr><td>Clipboard hijack — malware swaps address on paste</td><td class="risk-M">Medium</td><td class="risk-C">Critical</td><td>Clipboard disabled on approval Surface; manual verification only</td><td class="risk-L">Low</td></tr>
+<tr><td>Wrong network (e.g. ERC-20 sent to wrong chain)</td><td class="risk-L">Low</td><td class="risk-H">High</td><td>Platform validates address format; approver checks asset type in Activity</td><td class="risk-L">Low</td></tr>
+<tr><td>Smart contract destination risk (DeFi, bridge)</td><td class="risk-L">Low</td><td class="risk-H">High</td><td>Legal + technical review required before whitelisting any contract address</td><td class="risk-M">Medium</td></tr>
+<tr><td>Dust attack / address reuse tracking</td><td class="risk-L">Low</td><td class="risk-L">Low</td><td>Use unique deposit addresses where possible; VAULT wallet rotation</td><td class="risk-L">Low</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ===== 8. RISK REGISTER ===== -->
+<div class="section" id="risk-register">
+<div class="section-header">
+  <span class="sec-num">08</span>
+  <h2>Residual Risk Register</h2>
+</div>
+
+<table class="wt-table">
+<thead><tr><th>ID</th><th>Risk</th><th>Category</th><th>Likelihood</th><th>Impact</th><th>Controls In Place</th><th>Residual Risk</th><th>Owner</th></tr></thead>
+<tbody>
+<tr>
+  <td><strong>R01</strong></td>
+  <td>Colluding approvers approve a fraudulent transfer</td>
+  <td>Insider Threat</td>
+  <td class="risk-M">M</td>
+  <td class="risk-C">Critical</td>
+  <td>Role separation, quorum policy, video verification &gt;$10M, geographic distribution, org-line separation</td>
+  <td class="risk-M">Medium — cannot prevent MAJORITY-size collusion</td>
+  <td>Head of Risk</td>
+</tr>
+<tr>
+  <td><strong>R02</strong></td>
+  <td>Approver's YubiKey physically stolen</td>
+  <td>Physical</td>
+  <td class="risk-L">L</td>
+  <td class="risk-H">High</td>
+  <td>2 keys required; Coinbase session requires physical key present; immediate escalation and backup activation procedure</td>
+  <td class="risk-L">Low — attacker also needs Coinbase credentials and to be undetected</td>
+  <td>Security Officer</td>
+</tr>
+<tr>
+  <td><strong>R03</strong></td>
+  <td>Social engineering — fake Coinbase support call instructs approver to approve a transfer or reveal credentials</td>
+  <td>Social Engineering</td>
+  <td class="risk-M">M</td>
+  <td class="risk-C">Critical</td>
+  <td>Awareness training; Coinbase never requests approvals by phone; out-of-band confirmation protocol</td>
+  <td class="risk-M">Medium — human factor cannot be fully eliminated</td>
+  <td>Head of Security</td>
+</tr>
+<tr>
+  <td><strong>R04</strong></td>
+  <td>Deepfake video used to bypass video verification</td>
+  <td>Emerging Threat</td>
+  <td class="risk-L">L</td>
+  <td class="risk-C">Critical</td>
+  <td>Coinbase compliance team trained on liveness checks; challenge questions; prior relationship with Authorized Signatories</td>
+  <td class="risk-M">Medium — technology advancing faster than detection</td>
+  <td>Head of Risk</td>
+</tr>
+<tr>
+  <td><strong>R05</strong></td>
+  <td>API key with TRANSFER scope exposed in application code, logs, or environment files</td>
+  <td>Credential</td>
+  <td class="risk-M">M</td>
+  <td class="risk-H">High</td>
+  <td>Minimum-scope API keys; IP allowlisting on all keys; annual rotation; secret scanning in CI/CD</td>
+  <td class="risk-L">Low after controls applied</td>
+  <td>Security Officer</td>
+</tr>
+<tr>
+  <td><strong>R06</strong></td>
+  <td>Address poisoning — approver approves transfer to wrong (attacker-controlled) destination</td>
+  <td>Operational</td>
+  <td class="risk-M">M</td>
+  <td class="risk-C">Critical</td>
+  <td>Address whitelisting; dual-channel verification; character-by-character check protocol; clipboard disabled on approval device</td>
+  <td class="risk-L">Low — with protocol consistently enforced</td>
+  <td>Operations Lead</td>
+</tr>
+<tr>
+  <td><strong>R07</strong></td>
+  <td>Key approver resigns or is unavailable — quorum temporarily cannot be met</td>
+  <td>Operational</td>
+  <td class="risk-M">M</td>
+  <td class="risk-M">Medium</td>
+  <td>4 approvers recommended (1 redundant); offboarding checklist includes quorum recalculation; geographically distributed</td>
+  <td class="risk-L">Low — with 4 approvers, 1 absence still meets MAJORITY</td>
+  <td>Custody Operations Lead</td>
+</tr>
+<tr>
+  <td><strong>R08</strong></td>
+  <td>Jurisdictional legal hold freezes an approver's access to the platform or device</td>
+  <td>Legal/Regulatory</td>
+  <td class="risk-L">L</td>
+  <td class="risk-M">Medium</td>
+  <td>Geographic distribution of approvers across jurisdictions; legal counsel on retainer</td>
+  <td class="risk-M">Medium — unpredictable, jurisdiction-dependent</td>
+  <td>General Counsel</td>
+</tr>
+<tr>
+  <td><strong>R09</strong></td>
+  <td>Supply-chain compromised YubiKey purchased from third-party reseller</td>
+  <td>Supply Chain</td>
+  <td class="risk-L">L</td>
+  <td class="risk-H">High</td>
+  <td>Direct Yubico.com purchase only; tamper-seal verification on receipt; serial number logging</td>
+  <td class="risk-L">Low — with direct-purchase policy enforced</td>
+  <td>Security Officer</td>
+</tr>
+<tr>
+  <td><strong>R10</strong></td>
+  <td>Approval time window expires — transfer stuck in PENDING and fails</td>
+  <td>Operational</td>
+  <td class="risk-M">M</td>
+  <td class="risk-L">Low</td>
+  <td>Notification to all approvers on submission; escalation if no action within 4 hours; 24-hour window for standard transfers</td>
+  <td class="risk-L">Low — operational inconvenience, not a financial loss</td>
+  <td>Operations Lead</td>
+</tr>
+<tr>
+  <td><strong>R11</strong></td>
+  <td>Coinbase Prime platform outage during time-critical transfer</td>
+  <td>Platform Dependency</td>
+  <td class="risk-M">M</td>
+  <td class="risk-M">Medium</td>
+  <td>Business continuity plan; advance notification to Coinbase for large transfers; SLA review</td>
+  <td class="risk-M">Medium — external dependency, cannot be fully mitigated</td>
+  <td>Operations Lead</td>
+</tr>
+<tr>
+  <td><strong>R12</strong></td>
+  <td>Clipboard hijack malware swaps destination address during approval review</td>
+  <td>Technical</td>
+  <td class="risk-M">M</td>
+  <td class="risk-C">Critical</td>
+  <td>Clipboard access disabled on approval Surface via Edge enterprise policy; EDR in active prevention mode</td>
+  <td class="risk-L">Low — with technical controls applied</td>
+  <td>IT Administrator</td>
+</tr>
+<tr>
+  <td><strong>R13</strong></td>
+  <td>Approval device compromised by malware before YubiKey authentication</td>
+  <td>Technical</td>
+  <td class="risk-L">L</td>
+  <td class="risk-C">Critical</td>
+  <td>EDR in active prevention mode; Surface dedicated to approvals only; no general internet access; no admin rights</td>
+  <td class="risk-L">Low — with dedicated device and EDR in place</td>
+  <td>IT / Security Officer</td>
+</tr>
+<tr>
+  <td><strong>R14</strong></td>
+  <td>Initiator and Approver in the same reporting line — coercion or pressure to approve</td>
+  <td>Governance</td>
+  <td class="risk-M">M</td>
+  <td class="risk-H">High</td>
+  <td>HR and Security review org chart at onboarding; annual recertification of segregation; role assignment reviewed by Head of Risk</td>
+  <td class="risk-L">Low — with annual review process in place</td>
+  <td>Head of Security / HR</td>
+</tr>
+<tr>
+  <td><strong>R15</strong></td>
+  <td>Assets placed in custody before this framework is tested — untrained team encounters first real scenario during a live transfer</td>
+  <td>Process</td>
+  <td class="risk-L">L</td>
+  <td class="risk-C">Critical</td>
+  <td>This scenario library (Section 9) must be fully completed and signed off before go-live — it is a hard gate</td>
+  <td class="risk-L">Low — if the gate is enforced</td>
+  <td>Head of Risk</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<!-- ===== 9. SCENARIO LIBRARY ===== -->
+<div class="section" id="scenario-library">
+<div class="section-header">
+  <span class="sec-num">09</span>
+  <h2>Pre-Custody Scenario Library</h2>
+</div>
+<p>All 12 scenarios below must be executed, passed, and signed off before any real assets are placed in custody. Evidence must be retained for each scenario. Scenarios marked <span class="scenario-badge sb-must">MANDATORY</span> are hard gates — a failure must be remediated and the scenario re-run before proceeding. Scenarios marked <span class="scenario-badge sb-rec">RECOMMENDED</span> are strongly advised but may be waived with documented risk acceptance.</p>
+
+<!-- SC-01 -->
+<div class="scenario-card">
+<div class="scenario-hd">
+  <span class="scenario-id">SC-01</span>
+  <span class="scenario-badge sb-must">MANDATORY</span>
+  <span class="scenario-title">Standard Transfer — Happy Path</span>
+</div>
+<div class="scenario-body">
+<div class="sc-meta">
+  <div class="sc-meta-item"><label>Objective</label><p>Prove the core approval workflow completes end-to-end with a small test transfer</p></div>
+  <div class="sc-meta-item"><label>Actors Required</label><p>1 Initiator, 2+ Approvers, Security Officer (observer)</p></div>
+  <div class="sc-meta-item"><label>Preconditions</label><p>Test portfolio configured, 3 Approvers assigned, MAJORITY policy, test wallet funded with small amount, whitelisted test address ready</p></div>
+  <div class="sc-meta-item"><label>Time Estimate</label><p>30–60 minutes</p></div>
+</div>
+<div class="flow">
+  <div class="flow-step actor">Initiator</div><div class="flow-arrow">→</div>
+  <div class="flow-step system">Submit $1 USDC<br><span style="font-size:.6rem">ref: SC-01 Test</span></div><div class="flow-arrow">→</div>
+  <div class="flow-step system">Activity PENDING</div><div class="flow-arrow">→</div>
+  <div class="flow-step actor">Approver 1 + 2<br><span style="font-size:.6rem">YubiKey login</span></div><div class="flow-arrow">→</div>
+  <div class="flow-step decision">Verify details</div><div class="flow-arrow">→</div>
+  <div class="flow-step success">APPROVED ✓</div>
+</div>
+<ol class="steps-ol">
+  <li>Initiator logs into Coinbase Prime via Surface Laptop + YubiKey</li>
+  <li>Initiator submits withdrawal: $1 USDC to pre-whitelisted test address, memo "SC-01 Test"</li>
+  <li>Security Officer confirms Activity appears in PENDING state with correct amount and destination</li>
+  <li>Initiator sends out-of-band Signal message to approver group with amount and last 6 chars of destination address</li>
+  <li>Approver 1 logs in via Surface Laptop + YubiKey, reviews Activity details, compares to Signal confirmation, clicks Approve</li>
+  <li>Approver 2 repeats step 5 independently (without seeing Approver 1's decision first)</li>
+  <li>Security Officer confirms Activity moves to APPROVED/COMPLETED</li>
+  <li>Security Officer pulls Activity record from Coinbase Prime API and confirms all fields are correct</li>
+</ol>
+<div class="pass-box">✓ Pass criteria: Transfer completes without errors. Activity status = APPROVED/COMPLETED. Amount, destination, and memo all match the original request. API response includes correct metadata.</div>
+<div class="evidence-box">Evidence required: Screenshot of PENDING Activity · Screenshot of APPROVED Activity · API response JSON · Security Officer sign-off</div>
+</div>
+</div>
+
+<!-- SC-02 -->
+<div class="scenario-card">
+<div class="scenario-hd">
+  <span class="scenario-id">SC-02</span>
+  <span class="scenario-badge sb-must">MANDATORY</span>
+  <span class="scenario-title">Transfer Rejected by Approver</span>
+</div>
+<div class="scenario-body">
+<div class="sc-meta">
+  <div class="sc-meta-item"><label>Objective</label><p>Prove that a rejection blocks the transfer under ALL-consensus policy</p></div>
+  <div class="sc-meta-item"><label>Actors Required</label><p>1 Initiator, 2 Approvers</p></div>
+  <div class="sc-meta-item"><label>Preconditions</label><p>Temporarily set portfolio policy to ALL (all approvers must approve)</p></div>
+  <div class="sc-meta-item"><label>Time Estimate</label><p>20 minutes</p></div>
+</div>
+<div class="flow">
+  <div class="flow-step actor">Initiator</div><div class="flow-arrow">→</div>
+  <div class="flow-step system">Activity PENDING</div><div class="flow-arrow">→</div>
+  <div class="flow-step success">Approver 1<br><span style="font-size:.6rem">Approves</span></div><div class="flow-arrow">→</div>
+  <div class="flow-step risk">Approver 2<br><span style="font-size:.6rem">REJECTS</span></div><div class="flow-arrow">→</div>
+  <div class="flow-step risk">Activity REJECTED<br><span style="font-size:.6rem">hold released</span></div>
+</div>
+<ol class="steps-ol">
+  <li>Temporarily set consensus policy to ALL on the test portfolio</li>
+  <li>Initiator submits a test transfer</li>
+  <li>Approver 1 reviews and approves</li>
+  <li>Approver 2 reviews and deliberately rejects</li>
+  <li>Confirm Activity moves to REJECTED immediately</li>
+  <li>Confirm no transfer was executed; confirm hold is released back to wallet balance</li>
+  <li>Revert policy to MAJORITY after test</li>
+</ol>
+<div class="pass-box">✓ Pass criteria: Activity status = REJECTED. No transfer executed. Wallet balance restored to pre-submission value.</div>
+<div class="evidence-box">Evidence: Screenshot of REJECTED Activity · Wallet balance before and after (screenshots)</div>
+</div>
+</div>
+
+<!-- SC-03 -->
+<div class="scenario-card">
+<div class="scenario-hd">
+  <span class="scenario-id">SC-03</span>
+  <span class="scenario-badge sb-must">MANDATORY</span>
+  <span class="scenario-title">Transfer Approval Timeout — Activity Expires</span>
+</div>
+<div class="scenario-body">
+<div class="sc-meta">
+  <div class="sc-meta-item"><label>Objective</label><p>Prove that approver inaction causes the Activity to EXPIRE, not execute</p></div>
+  <div class="sc-meta-item"><label>Actors Required</label><p>1 Initiator, Security Officer (observer)</p></div>
+  <div class="sc-meta-item"><label>Preconditions</label><p>Set time window to minimum (1 hour) for this test; revert after</p></div>
+  <div class="sc-meta-item"><label>Time Estimate</label><p>1–2 hours (includes waiting for expiry)</p></div>
+</div>
+<div class="flow">
+  <div class="flow-step actor">Initiator</div><div class="flow-arrow">→</div>
+  <div class="flow-step system">Activity PENDING</div><div class="flow-arrow">→</div>
+  <div class="flow-step" style="background:#1c1917;border-color:#57534e;color:#a8a29e">Approvers<br><span style="font-size:.6rem">deliberately inactive</span></div><div class="flow-arrow">→</div>
+  <div class="flow-step" style="background:#1c1917;border-color:#57534e;color:#a8a29e">Time window<br><span style="font-size:.6rem">elapses</span></div><div class="flow-arrow">→</div>
+  <div class="flow-step risk">Activity EXPIRED<br><span style="font-size:.6rem">no transfer</span></div>
+</div>
+<ol class="steps-ol">
+  <li>Set time window to 1 hour on test portfolio (note: minimum window may be limited by platform)</li>
+  <li>Initiator submits test transfer</li>
+  <li>All approvers deliberately take no action</li>
+  <li>Wait for the time window to elapse</li>
+  <li>Confirm Activity status has changed to EXPIRED (or equivalent terminal state)</li>
+  <li>Confirm no transfer was executed; confirm hold released</li>
+  <li>Revert time window to production value (24 hours)</li>
+</ol>
+<div class="pass-box">✓ Pass criteria: Activity = EXPIRED (or equivalent). Transfer did not execute. Balance restored.</div>
+<div class="evidence-box">Evidence: Screenshot of Activity at PENDING · Screenshot after expiry · Wallet balance unchanged confirmation</div>
+</div>
+</div>
+
+<!-- SC-04 -->
+<div class="scenario-card">
+<div class="scenario-hd">
+  <span class="scenario-id">SC-04</span>
+  <span class="scenario-badge sb-must">MANDATORY</span>
+  <span class="scenario-title">Initiator Cannot Approve Own Transfer</span>
+</div>
+<div class="scenario-body">
+<div class="sc-meta">
+  <div class="sc-meta-item"><label>Objective</label><p>Prove platform enforces role segregation — Initiator cannot also approve the same transfer</p></div>
+  <div class="sc-meta-item"><label>Actors Required</label><p>1 Initiator account</p></div>
+  <div class="sc-meta-item"><label>Preconditions</label><p>Initiator account has only the Initiator role (not Administrator)</p></div>
+  <div class="sc-meta-item"><label>Time Estimate</label><p>15 minutes</p></div>
+</div>
+<div class="flow">
+  <div class="flow-step actor">Initiator</div><div class="flow-arrow">→</div>
+  <div class="flow-step system">Submits transfer</div><div class="flow-arrow">→</div>
+  <div class="flow-step actor">Initiator navigates<br><span style="font-size:.6rem">to Activities</span></div><div class="flow-arrow">→</div>
+  <div class="flow-step decision">Attempts to<br><span style="font-size:.6rem">approve own Activity</span></div><div class="flow-arrow">→</div>
+  <div class="flow-step risk">Platform blocks ✗<br><span style="font-size:.6rem">approval unavailable</span></div>
+</div>
+<ol class="steps-ol">
+  <li>Log into Coinbase Prime as the Initiator account</li>
+  <li>Submit a withdrawal (creates a PENDING Activity)</li>
+  <li>While still logged in as Initiator, navigate to the Activities section</li>
+  <li>Attempt to approve the pending Activity with the Initiator account</li>
+  <li>Observe whether the Approve button is disabled, hidden, or returns an error</li>
+</ol>
+<div class="pass-box">✓ Pass criteria: Platform prevents the Initiator from approving their own transfer — the Approve action is either absent, disabled, or returns a permission error.</div>
+<div class="evidence-box">Evidence: Screenshot showing disabled/absent approval option for the Initiator account</div>
+</div>
+</div>
+
+<!-- SC-05 -->
+<div class="scenario-card">
+<div class="scenario-hd">
+  <span class="scenario-id">SC-05</span>
+  <span class="scenario-badge sb-must">MANDATORY</span>
+  <span class="scenario-title">YubiKey Required for Approval Login</span>
+</div>
+<div class="scenario-body">
+<div class="sc-meta">
+  <div class="sc-meta-item"><label>Objective</label><p>Prove authentication fails without the hardware security key</p></div>
+  <div class="sc-meta-item"><label>Actors Required</label><p>1 Approver, IT Administrator</p></div>
+  <div class="sc-meta-item"><label>Preconditions</label><p>Approver account configured with YubiKey as the only MFA method (no backup software TOTP)</p></div>
+  <div class="sc-meta-item"><label>Time Estimate</label><p>15 minutes</p></div>
+</div>
+<div class="flow">
+  <div class="flow-step actor">Approver</div><div class="flow-arrow">→</div>
+  <div class="flow-step system">Username + password<br><span style="font-size:.6rem">entered</span></div><div class="flow-arrow">→</div>
+  <div class="flow-step decision">MFA prompt:<br><span style="font-size:.6rem">security key required</span></div><div class="flow-arrow">→</div>
+  <div class="flow-step" style="background:#1c1917;border-color:#57534e;color:#a8a29e">YubiKey not<br><span style="font-size:.6rem">inserted</span></div><div class="flow-arrow">→</div>
+  <div class="flow-step risk">Login blocked ✗</div>
+</div>
+<ol class="steps-ol">
+  <li>Approver navigates to Coinbase Prime login on the Surface Laptop</li>
+  <li>Enters valid username and password</li>
+  <li>When security key prompt appears, does NOT insert the YubiKey</li>
+  <li>Attempt any bypass: cancel, look for software TOTP option, try SMS fallback (none should be available)</li>
+  <li>Confirm login is blocked and the Coinbase Prime approval screen cannot be reached</li>
+</ol>
+<div class="pass-box">✓ Pass criteria: Login is fully blocked without YubiKey insertion. No alternative MFA bypass is available. Approver cannot reach the Activity approval screen.</div>
+<div class="evidence-box">Evidence: Screenshot of blocked login / security key required prompt</div>
+</div>
+</div>
+
+<!-- SC-06 -->
+<div class="scenario-card">
+<div class="scenario-hd">
+  <span class="scenario-id">SC-06</span>
+  <span class="scenario-badge sb-must">MANDATORY</span>
+  <span class="scenario-title">API Key Scope Enforcement — VIEW-Only Key Cannot Withdraw</span>
+</div>
+<div class="scenario-body">
+<div class="sc-meta">
+  <div class="sc-meta-item"><label>Objective</label><p>Prove a VIEW-only API key cannot submit a withdrawal via the API</p></div>
+  <div class="sc-meta-item"><label>Actors Required</label><p>Security Officer or IT with API access</p></div>
+  <div class="sc-meta-item"><label>Preconditions</label><p>VIEW-only portfolio-scoped API key available; curl or Postman installed</p></div>
+  <div class="sc-meta-item"><label>Time Estimate</label><p>20 minutes</p></div>
+</div>
+<div class="flow">
+  <div class="flow-step actor">Tester</div><div class="flow-arrow">→</div>
+  <div class="flow-step system">POST withdrawal<br><span style="font-size:.6rem">VIEW-only API key</span></div><div class="flow-arrow">→</div>
+  <div class="flow-step risk">403 Forbidden<br><span style="font-size:.6rem">insufficient_scope</span></div><div class="flow-arrow">→</div>
+  <div class="flow-step success">No Activity created ✓</div>
+</div>
+<ol class="steps-ol">
+  <li>Obtain a VIEW-only API key scoped to the test portfolio</li>
+  <li>Use curl to submit a POST request to the withdrawal endpoint with valid request body but VIEW-only credentials</li>
+  <li>Confirm the API returns HTTP 403 with an error indicating insufficient permissions</li>
+  <li>Confirm no PENDING Activity was created in the Coinbase Prime UI</li>
+</ol>
+<div class="pass-box">✓ Pass criteria: API returns 403. Error message references insufficient scope or permissions. No Activity created. Wallet balance unchanged.</div>
+<div class="evidence-box">Evidence: curl command + full API response (copy to text file) · Screenshot confirming no Activity in UI</div>
+</div>
+</div>
+
+<!-- SC-07 -->
+<div class="scenario-card">
+<div class="scenario-hd">
+  <span class="scenario-id">SC-07</span>
+  <span class="scenario-badge sb-must">MANDATORY</span>
+  <span class="scenario-title">On-Chain Transfer to Non-Whitelisted Address Blocked</span>
+</div>
+<div class="scenario-body">
+<div class="sc-meta">
+  <div class="sc-meta-item"><label>Objective</label><p>Prove the platform blocks submission of a transfer to an address not on the approved allowlist</p></div>
+  <div class="sc-meta-item"><label>Actors Required</label><p>1 Initiator</p></div>
+  <div class="sc-meta-item"><label>Preconditions</label><p>Address allowlist configured on test portfolio; a test address that is NOT on the list</p></div>
+  <div class="sc-meta-item"><label>Time Estimate</label><p>15 minutes</p></div>
+</div>
+<div class="flow">
+  <div class="flow-step actor">Initiator</div><div class="flow-arrow">→</div>
+  <div class="flow-step system">Submit withdrawal<br><span style="font-size:.6rem">non-whitelisted addr</span></div><div class="flow-arrow">→</div>
+  <div class="flow-step risk">Platform rejects<br><span style="font-size:.6rem">before Activity created</span></div><div class="flow-arrow">→</div>
+  <div class="flow-step success">No Activity ✓<br><span style="font-size:.6rem">no balance change</span></div>
+</div>
+<ol class="steps-ol">
+  <li>Generate or identify a test wallet address not on the current Coinbase Prime allowlist</li>
+  <li>Log in as Initiator and attempt to submit a withdrawal to this address</li>
+  <li>Confirm the platform rejects the submission before creating an Activity</li>
+  <li>Confirm the error message references the address not being on the approved list</li>
+</ol>
+<div class="pass-box">✓ Pass criteria: Platform rejects the submission. No Activity created. Error message confirms the address is not whitelisted.</div>
+<div class="evidence-box">Evidence: Screenshot of error message · Confirmation no Activity appears in the activity log</div>
+</div>
+</div>
+
+<!-- SC-08 -->
+<div class="scenario-card">
+<div class="scenario-hd">
+  <span class="scenario-id">SC-08</span>
+  <span class="scenario-badge sb-must">MANDATORY</span>
+  <span class="scenario-title">Insufficient Balance — Withdrawal Rejected</span>
+</div>
+<div class="scenario-body">
+<div class="sc-meta">
+  <div class="sc-meta-item"><label>Objective</label><p>Prove the platform rejects a withdrawal that exceeds the available wallet balance</p></div>
+  <div class="sc-meta-item"><label>Actors Required</label><p>1 Initiator</p></div>
+  <div class="sc-meta-item"><label>Preconditions</label><p>Test wallet with known balance (e.g. $10 USDC)</p></div>
+  <div class="sc-meta-item"><label>Time Estimate</label><p>10 minutes</p></div>
+</div>
+<ol class="steps-ol">
+  <li>Note exact balance of test wallet (e.g. $10 USDC)</li>
+  <li>Attempt to submit a withdrawal for an amount exceeding the balance (e.g. $1,000 USDC)</li>
+  <li>Confirm the platform returns an insufficient funds error</li>
+  <li>Confirm no Activity is created and balance is unchanged</li>
+</ol>
+<div class="pass-box">✓ Pass criteria: Platform returns an insufficient funds / insufficient balance error. No Activity created. Wallet balance unchanged.</div>
+<div class="evidence-box">Evidence: Screenshot of error response · Wallet balance unchanged</div>
+</div>
+</div>
+
+<!-- SC-09 -->
+<div class="scenario-card">
+<div class="scenario-hd">
+  <span class="scenario-id">SC-09</span>
+  <span class="scenario-badge sb-must">MANDATORY</span>
+  <span class="scenario-title">Large Transfer Triggers Video Verification Gate</span>
+</div>
+<div class="scenario-body">
+<div class="sc-meta">
+  <div class="sc-meta-item"><label>Objective</label><p>Prove that a transfer above the video verification threshold cannot proceed without the video step</p></div>
+  <div class="sc-meta-item"><label>Actors Required</label><p>1 Initiator, Security Officer, Coinbase Prime account team (for coordination)</p></div>
+  <div class="sc-meta-item"><label>Preconditions</label><p>Coordinate with Coinbase Prime account team in advance — this test requires platform interaction. May need a staging environment.</p></div>
+  <div class="sc-meta-item"><label>Time Estimate</label><p>1–2 days (coordination lead time)</p></div>
+</div>
+<ol class="steps-ol">
+  <li>Coordinate with Coinbase Prime account team to arrange a test of the video verification trigger</li>
+  <li>Submit a transfer above the video verification threshold in a test/staging environment</li>
+  <li>Confirm the platform creates the Activity but holds the standard approval controls pending video verification</li>
+  <li>Confirm Authorized Signatories receive notification from Coinbase</li>
+  <li>Confirm that Approvers cannot approve without the video step being completed first</li>
+</ol>
+<div class="pass-box">✓ Pass criteria: Activity is created. Standard Approve buttons are unavailable/disabled pending video verification. Authorized Signatories receive Coinbase notification.</div>
+<div class="evidence-box">Evidence: Activity screenshot showing video-gated status · Authorized Signatory notification confirmation · Account team confirmation email</div>
+</div>
+</div>
+
+<!-- SC-10 -->
+<div class="scenario-card">
+<div class="scenario-hd">
+  <span class="scenario-id">SC-10</span>
+  <span class="scenario-badge sb-must">MANDATORY</span>
+  <span class="scenario-title">YubiKey Lost — Recovery Procedure Drill</span>
+</div>
+<div class="scenario-body">
+<div class="sc-meta">
+  <div class="sc-meta-item"><label>Objective</label><p>Prove the lost-key recovery procedure is executable within the 4-hour SLA and quorum is maintained throughout</p></div>
+  <div class="sc-meta-item"><label>Actors Required</label><p>Security Officer, IT Administrator, 1 Approver (test subject)</p></div>
+  <div class="sc-meta-item"><label>Preconditions</label><p>Approver has both keys registered; backup key in company safe; dual-control access to safe available</p></div>
+  <div class="sc-meta-item"><label>Time Estimate</label><p>4 hours (includes waiting and safe access)</p></div>
+</div>
+<div class="flow">
+  <div class="flow-step risk">Key "lost"<br><span style="font-size:.6rem">primary deregistered</span></div><div class="flow-arrow">→</div>
+  <div class="flow-step actor">Escalation to<br><span style="font-size:.6rem">Security Officer</span></div><div class="flow-arrow">→</div>
+  <div class="flow-step actor">IT opens safe<br><span style="font-size:.6rem">dual control</span></div><div class="flow-arrow">→</div>
+  <div class="flow-step actor">Approver activates<br><span style="font-size:.6rem">backup key</span></div><div class="flow-arrow">→</div>
+  <div class="flow-step success">Quorum restored ✓<br><span style="font-size:.6rem">&lt; 4 hours</span></div>
+</div>
+<ol class="steps-ol">
+  <li>Start the clock. Security Officer simulates a lost YubiKey by deregistering the primary key from a test Approver account (or use a spare deregistered key)</li>
+  <li>Approver attempts login — confirms primary key fails authentication</li>
+  <li>Approver escalates immediately to Security Officer; Security Officer opens an incident ticket</li>
+  <li>Security Officer notifies Custody Operations Lead; confirms remaining quorum is sufficient for ongoing operations</li>
+  <li>IT Administrator and a second keyholder access the company safe using dual-control procedure; retrieve the backup key</li>
+  <li>Approver activates backup key for login — confirms successful authentication via Coinbase Prime</li>
+  <li>Security Officer orders replacement primary key from yubico.com</li>
+  <li>Stop the clock. Record total elapsed time from step 1 to step 6.</li>
+</ol>
+<div class="pass-box">✓ Pass criteria: Backup key operational within 4 business hours. Incident log complete with time-stamps at each step. Quorum maintained throughout (remaining approvers covered). Total elapsed time recorded and is below 4-hour SLA.</div>
+<div class="evidence-box">Evidence: Incident ticket with time-stamps · Safe access log (dual-sign) · Screenshot of successful backup key login · Total elapsed time record</div>
+</div>
+</div>
+
+<!-- SC-11 -->
+<div class="scenario-card">
+<div class="scenario-hd">
+  <span class="scenario-id">SC-11</span>
+  <span class="scenario-badge sb-must">MANDATORY</span>
+  <span class="scenario-title">New On-Chain Address Addition Requires Approval</span>
+</div>
+<div class="scenario-body">
+<div class="sc-meta">
+  <div class="sc-meta-item"><label>Objective</label><p>Prove adding a new address to the allowlist is not unilateral — it requires a separate approval Activity</p></div>
+  <div class="sc-meta-item"><label>Actors Required</label><p>1 Requestor, Administrator, 2 Approvers</p></div>
+  <div class="sc-meta-item"><label>Preconditions</label><p>Address allowlist configured on test portfolio; a new test address not yet on the list</p></div>
+  <div class="sc-meta-item"><label>Time Estimate</label><p>30 minutes</p></div>
+</div>
+<ol class="steps-ol">
+  <li>Requestor submits a request to add a new test address to the Coinbase Prime allowlist via the agreed request process</li>
+  <li>Security Officer receives the address via two independent channels and performs the dual-source verification (first 6, last 6, 3 random chars)</li>
+  <li>Administrator adds the address to the Coinbase Prime allowlist settings</li>
+  <li>Confirm that the address addition generates an Activity requiring approval (not an immediate unilateral action)</li>
+  <li>Two Approvers approve the address addition Activity</li>
+  <li>Confirm the address is now available for use in withdrawal submissions</li>
+  <li>Attempt to use the address in a withdrawal before approval completes (in a separate test run) — confirm it is blocked</li>
+</ol>
+<div class="pass-box">✓ Pass criteria: Address addition generates an Activity requiring approval. Address is not usable until the Activity is approved by the required quorum. Audit record of the address addition is visible in the Activity log.</div>
+<div class="evidence-box">Evidence: Activity record for address addition · Screenshots of approval steps · Confirmation of successful withdrawal post-approval · Verification log signed by Security Officer</div>
+</div>
+</div>
+
+<!-- SC-12 -->
+<div class="scenario-card">
+<div class="scenario-hd">
+  <span class="scenario-id">SC-12</span>
+  <span class="scenario-badge sb-must">MANDATORY</span>
+  <span class="scenario-title">Full Transfer Lifecycle + Reconciliation Export</span>
+</div>
+<div class="scenario-body">
+<div class="sc-meta">
+  <div class="sc-meta-item"><label>Objective</label><p>Prove the complete end-to-end flow including reconciliation report output for Finance sign-off</p></div>
+  <div class="sc-meta-item"><label>Actors Required</label><p>1 Initiator, 2 Approvers, Finance (reconciliation check), Security Officer</p></div>
+  <div class="sc-meta-item"><label>Preconditions</label><p>SC-01 must have passed. Same test environment.</p></div>
+  <div class="sc-meta-item"><label>Time Estimate</label><p>1–2 hours</p></div>
+</div>
+<ol class="steps-ol">
+  <li>Execute a complete transfer following Workflow A (SC-01 steps)</li>
+  <li>Once transfer is completed, pull the Activity list via API: <code style="font-family:monospace;font-size:.7rem;color:#7dd3fc">GET /v1/portfolios/{id}/activities</code></li>
+  <li>Confirm the completed transfer appears in the API response with correct status, amount, destination, and timestamps</li>
+  <li>Export the reconciliation/activity report (CSV or JSON) from the platform</li>
+  <li>Finance reviews the export and confirms: debit entry present, amount correct, destination matches, timestamp accurate, reference memo present</li>
+  <li>Finance signs off on the reconciliation</li>
+</ol>
+<div class="pass-box">✓ Pass criteria: Activity record complete and accurate in both UI and API. Reconciliation export contains the transaction with no discrepancies. Finance sign-off obtained.</div>
+<div class="evidence-box">Evidence: API response JSON (full activity record) · Reconciliation export file · Finance sign-off (email or signed document)</div>
+</div>
+</div>
+
+</div><!-- /scenario-library -->
+
+<!-- ===== 10. CHECKLIST ===== -->
+<div class="section" id="checklist">
+<div class="section-header">
+  <span class="sec-num">10</span>
+  <h2>Pre-Go-Live Checklist</h2>
+</div>
+<p>All items below must be confirmed before any real assets are placed in custody. Leave-blank columns are for completion during onboarding.</p>
+
+<div class="card">
+<div class="checklist-section">Platform Configuration</div>
+<ul class="checklist">
+  <li><div class="cb"></div><span>All user roles assigned with correct role and access_level (Entity vs Portfolio)</span></li>
+  <li><div class="cb"></div><span>Consensus policy thresholds configured per portfolio and approved by Head of Risk</span></li>
+  <li><div class="cb"></div><span>API keys created with minimum required scopes; no key has more permissions than its function requires</span></li>
+  <li><div class="cb"></div><span>All API keys IP-allowlisted to corporate IP ranges only</span></li>
+  <li><div class="cb"></div><span>VIEW-only reporting key confirmed and tested (SC-06 passed)</span></li>
+  <li><div class="cb"></div><span>On-chain address allowlist populated with all required destination addresses</span></li>
+  <li><div class="cb"></div><span>VAULT wallets created for all significant holdings; TRADING wallets confirmed to have low limits</span></li>
+  <li><div class="cb"></div><span>Transfer tier thresholds reviewed and match this framework (Section 2)</span></li>
+</ul>
+
+<div class="checklist-section">YubiKey Provisioning</div>
+<ul class="checklist">
+  <li><div class="cb"></div><span>All Approvers have 2 YubiKeys registered — primary confirmed with approver; backup in company safe</span></li>
+  <li><div class="cb"></div><span>Backup keys stored under dual-control (two keyholders required for access)</span></li>
+  <li><div class="cb"></div><span>YubiKey serial number log completed and signed by Security Officer</span></li>
+  <li><div class="cb"></div><span>Lost-key recovery procedure documented, tested, and signed off (SC-10 passed)</span></li>
+  <li><div class="cb"></div><span>Offboarding procedure documented and walkthrough completed with IT</span></li>
+</ul>
+
+<div class="checklist-section">Surface Laptop Hardening</div>
+<ul class="checklist">
+  <li><div class="cb"></div><span>All controls from Section 6 verified via MDM compliance report</span></li>
+  <li><div class="cb"></div><span>USB device policy applied: only Yubico VID 0x1050 allowlisted; USB storage blocked</span></li>
+  <li><div class="cb"></div><span>EDR in active prevention mode (not audit/detect-only); coverage confirmed</span></li>
+  <li><div class="cb"></div><span>Network segmentation verified: approval VLAN isolated from general corporate network</span></li>
+  <li><div class="cb"></div><span>Clipboard policy applied and tested (paste-from-clipboard blocked on Coinbase Prime tabs)</span></li>
+  <li><div class="cb"></div><span>Screen lock confirmed: auto-locks after 60 seconds</span></li>
+  <li><div class="cb"></div><span>Session logging to SIEM confirmed; retention period set to minimum 12 months</span></li>
+  <li><div class="cb"></div><span>Physical controls: device registered in asset inventory; storage cabinet assigned</span></li>
+</ul>
+
+<div class="checklist-section">Process Readiness</div>
+<ul class="checklist">
+  <li><div class="cb"></div><span>Workflow A, B, and C documented in written procedures and reviewed by Operations Lead</span></li>
+  <li><div class="cb"></div><span>Out-of-band communication channel established (Signal group with all Approvers and Initiators)</span></li>
+  <li><div class="cb"></div><span>All Coinbase Prime users have completed security awareness training (social engineering, address verification, YubiKey handling)</span></li>
+  <li><div class="cb"></div><span>Org chart reviewed: no Initiator/Approver shares a direct reporting line</span></li>
+  <li><div class="cb"></div><span>At least one Approver confirmed in a different geographic location</span></li>
+  <li><div class="cb"></div><span>Address verification protocol documented and distributed to all Initiators and Approvers</span></li>
+</ul>
+
+<div class="checklist-section">Scenario Library</div>
+<ul class="checklist">
+  <li><div class="cb"></div><span>SC-01 (Happy path) — Passed and evidence retained</span></li>
+  <li><div class="cb"></div><span>SC-02 (Rejection) — Passed and evidence retained</span></li>
+  <li><div class="cb"></div><span>SC-03 (Timeout/expiry) — Passed and evidence retained</span></li>
+  <li><div class="cb"></div><span>SC-04 (Initiator cannot approve) — Passed and evidence retained</span></li>
+  <li><div class="cb"></div><span>SC-05 (YubiKey required) — Passed and evidence retained</span></li>
+  <li><div class="cb"></div><span>SC-06 (API scope enforcement) — Passed and evidence retained</span></li>
+  <li><div class="cb"></div><span>SC-07 (Non-whitelisted address blocked) — Passed and evidence retained</span></li>
+  <li><div class="cb"></div><span>SC-08 (Insufficient balance) — Passed and evidence retained</span></li>
+  <li><div class="cb"></div><span>SC-09 (Video verification trigger) — Passed and evidence retained</span></li>
+  <li><div class="cb"></div><span>SC-10 (Lost YubiKey recovery drill) — Passed within 4h SLA; evidence retained</span></li>
+  <li><div class="cb"></div><span>SC-11 (Address addition requires approval) — Passed and evidence retained</span></li>
+  <li><div class="cb"></div><span>SC-12 (Full lifecycle + reconciliation) — Passed and evidence retained</span></li>
+</ul>
+
+<div class="checklist-section">Legal &amp; Compliance Sign-off</div>
+<ul class="checklist">
+  <li><div class="cb"></div><span>Insurance policy confirmed to cover custodied assets (crime policy + cyber policy)</span></li>
+  <li><div class="cb"></div><span>Regulatory notification obligations documented (who to notify, timeline, jurisdiction)</span></li>
+  <li><div class="cb"></div><span>Incident response playbook reviewed and approved by General Counsel</span></li>
+  <li><div class="cb"></div><span>Coinbase Prime terms and customer agreement reviewed by Legal</span></li>
+</ul>
+
+<div class="checklist-section">Final Go-Live Authorisation</div>
+<ul class="checklist">
+  <li><div class="cb"></div><span>Security Officer sign-off</span></li>
+  <li><div class="cb"></div><span>Head of Risk sign-off</span></li>
+  <li><div class="cb"></div><span>CFO or COO sign-off (formal risk acceptance)</span></li>
+  <li><div class="cb"></div><span>Assets go-live date confirmed and communicated</span></li>
+</ul>
+</div>
+</div>
+
+<!-- ===== 11. GAPS ===== -->
+<div class="section" id="gaps">
+<div class="section-header">
+  <span class="sec-num">11</span>
+  <h2>Gaps &amp; Recommendations</h2>
+</div>
+<p>The following are not provided by the Coinbase Prime platform — they must be built and maintained by the institution.</p>
+
+<div class="card">
+<h3>1. Out-of-Band Communication Channel</h3>
+<p>Coinbase Prime notifies approvers via platform email. Email is not a secure real-time channel for transfer confirmation — it is susceptible to phishing, forwarding, and delay. The institution must establish a dedicated out-of-band channel (Signal, encrypted corporate messaging, or a dedicated SMS service) used exclusively for transfer confirmation and YubiKey recovery coordination. <strong style="color:#f1f5f9">Never use WhatsApp, standard SMS, or consumer email for transfer confirmation.</strong></p>
+</div>
+
+<div class="card">
+<h3>2. Incident Response Playbook</h3>
+<p>Coinbase has a support contact (primeops@coinbase.com) but does not provide a client-specific incident response runbook. The institution must build one covering: who to call at Coinbase and with what SLA, internal escalation chain (Security Officer → CISO → CEO), time-to-containment targets, post-incident review process, and how to handle a situation where a transfer has already executed and may be fraudulent (blockchain analytics, law enforcement, legal hold on Coinbase side).</p>
+</div>
+
+<div class="card">
+<h3>3. Insurance Coverage Verification</h3>
+<p>Coinbase Prime holds its own crime and cyber insurance, but this covers Coinbase's liabilities, not necessarily client asset losses. The institution must verify with its own insurer: does the crime policy cover theft by a colluding employee using valid credentials? Does the cyber policy cover a social engineering attack that resulted in an approved (but fraudulent) transfer? What is the notification window? These are not abstract questions — they determine whether losses are recoverable.</p>
+</div>
+
+<div class="card">
+<h3>4. Tabletop Exercise (Pre-Go-Live)</h3>
+<p>Before placing real assets in custody, run a tabletop exercise with all stakeholders simulating a realistic compromise scenario — for example: "An approver reports their Surface Laptop missing. A pending $2M withdrawal Activity was submitted 6 hours ago by the Initiator. What do we do?" Work through the responses in real time. Surface gaps in the IR playbook before they occur in a live incident. Document findings and close all gaps before go-live.</p>
+</div>
+
+<div class="card">
+<h3>5. Annual Access Recertification</h3>
+<p>Coinbase Prime does not automatically prompt access reviews. The institution must build a quarterly or annual review process: all roles confirmed with their managers, YubiKey physical inventory checked and signed, API keys audited for continued necessity and scope, org chart segregation re-verified (no new reporting-line conflicts), and the scenario library re-run for any new Approvers onboarded since the last review.</p>
+</div>
+
+<div class="card">
+<h3>6. Penetration Testing</h3>
+<p>Engage a specialist firm to test the approval Surface environment and the network segment. Specific focus areas: can an attacker on the general corporate network reach the approval VLAN? Can the USB device policy be bypassed by a creative attacker (e.g. a USB hub with a hidden HID device)? Is the EDR detectable or disableable by a sophisticated adversary? Test at least annually and after any significant infrastructure change.</p>
+</div>
+
+<div class="card">
+<h3>7. Regulatory Notification Obligations</h3>
+<p>In most jurisdictions, a fraudulent crypto transfer must be reported to financial regulators (FCA, FinCEN, etc.) within a defined window — sometimes as short as 24–72 hours. This requirement must be pre-drafted in the IR playbook so the team knows exactly what to do and who to notify during an incident, not afterwards. Engaging legal counsel to produce a jurisdiction-specific matrix is strongly recommended before go-live.</p>
+</div>
+
+<div class="card">
+<h3>8. Coinbase Prime as Single Point of Failure</h3>
+<p>If Coinbase Prime is unavailable (platform outage, regulatory action, or insolvency), access to custodied assets may be limited or delayed. The institution should understand: what are Coinbase's withdrawal SLAs during an outage? What is the segregation of client assets from Coinbase's own balance sheet (are client assets truly segregated)? Is there a path to move assets to a different custodian if needed, and how long does it take? These questions should be answered in the business continuity plan before go-live.</p>
+</div>
+
+<div class="callout success"><strong>Summary:</strong> Coinbase Prime provides an institutional-grade approval and access control framework. The gaps above are not platform failures — they are the client-side responsibilities that no custodian platform can fulfill on your behalf. Address all 8 points before placing significant assets in custody.</div>
+</div>
+
+<footer>Coinbase Prime — Ops &amp; Controls Framework · July 2026 · Research Archive · <a href="index.html" style="color:#334155">Archive Index</a></footer>
+</div><!-- /main -->
+</div><!-- /layout -->
+
+<script>
+// Sidebar scroll tracking
+const sections = document.querySelectorAll('.section');
+const navLinks = document.querySelectorAll('.sidebar nav a');
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      navLinks.forEach(l => l.classList.remove('active'));
+      const active = document.querySelector('.sidebar nav a[href="#'+e.target.id+'"]');
+      if (active) active.classList.add('active');
+    }
+  });
+}, {threshold: 0.2});
+sections.forEach(s => obs.observe(s));
+</script>
+</body>
+</html>
