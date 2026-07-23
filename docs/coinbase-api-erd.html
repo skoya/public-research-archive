@@ -1190,6 +1190,206 @@ svg text{font-family:system-ui,sans-serif}
   </div>
 </div>
 
+
+<!-- ===== SECTION: ENTITLEMENT MODEL ===== -->
+<div class="api-section">
+  <div class="api-header">
+    <span class="api-badge badge-prime">Prime API</span>
+    <h2>Entitlement Model — Users, API Keys &amp; Consensus Policy</h2>
+  </div>
+
+  <!-- 1a. User Role Model -->
+  <p class="section-label">User Role Model</p>
+  <table class="wt-table">
+    <thead>
+      <tr><th>Role</th><th>Access Level</th><th>Can Initiate</th><th>Can Approve</th><th>Can Trade</th><th>Can Manage Team</th><th>Notes</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Administrator</td><td>Entity or Portfolio</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>Full access. If present, no other roles required per portfolio</td></tr>
+      <tr><td>Authorized Signatory</td><td>Entity or Portfolio</td><td>✓</td><td>✓</td><td>—</td><td>—</td><td>Required for video verification on large transfers</td></tr>
+      <tr><td>Full Trader</td><td>Portfolio</td><td>✓</td><td>—</td><td>✓</td><td>—</td><td>Can trade and initiate transfers</td></tr>
+      <tr><td>Initiator</td><td>Portfolio</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>Initiates transactions; cannot approve</td></tr>
+      <tr><td>Approver</td><td>Portfolio</td><td>—</td><td>✓</td><td>—</td><td>—</td><td>Reviews and approves Activities; cannot initiate</td></tr>
+      <tr><td>Team Manager</td><td>Entity or Portfolio</td><td>—</td><td>—</td><td>—</td><td>✓</td><td>Manages team membership; cannot use trading app</td></tr>
+      <tr><td>Viewer</td><td>Portfolio</td><td>—</td><td>—</td><td>—</td><td>—</td><td>Read-only; maps to API VIEW scope</td></tr>
+    </tbody>
+  </table>
+
+  <div class="cards" style="margin-bottom:24px">
+    <div class="card">
+      <h3>Entity-level Users</h3>
+      <p style="font-size:.77rem;color:#94a3b8">Hold the same role across <strong style="color:#f1f5f9">all portfolios</strong>. Auto-added to new portfolios when created. Participate in Entity + Portfolio + Transfer policies.</p>
+    </div>
+    <div class="card">
+      <h3>Portfolio-level Users</h3>
+      <p style="font-size:.77rem;color:#94a3b8">Unique roles per portfolio. <strong style="color:#f1f5f9">Not</strong> auto-added to new portfolios. Participate in Portfolio + Transfer policies only.</p>
+    </div>
+    <div class="card">
+      <h3>Minimum Portfolio Requirement</h3>
+      <p style="font-size:.77rem;color:#94a3b8">Each portfolio requires: <strong style="color:#6ee7b7">Administrator</strong> OR (<strong style="color:#93c5fd">Initiator</strong> + <strong style="color:#fde68a">Approver</strong> + <strong style="color:#cbd5e1">Team Manager</strong>).</p>
+    </div>
+  </div>
+
+  <!-- 1b. API Key Hierarchy -->
+  <p class="section-label">API Key Hierarchy</p>
+  <table class="wt-table">
+    <thead>
+      <tr><th>Scope Level</th><th>Coverage</th><th>Typical Use</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Portfolio-level</td><td>Scoped to one portfolio; required for WebSocket/FIX</td><td>Per-portfolio automation, market data feeds</td></tr>
+      <tr><td>Entity-level</td><td>All portfolios in entity</td><td>Most common for automated systems</td></tr>
+      <tr><td>Organization-level</td><td>All entities/portfolios</td><td>Must request via primeops@coinbase.com</td></tr>
+    </tbody>
+  </table>
+
+  <p class="section-label">Permission Bundles</p>
+  <table class="wt-table">
+    <thead>
+      <tr><th>Bundle</th><th>Scope</th><th>Typical Use</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>VIEW</td><td>All GET endpoints</td><td>Reporting, monitoring, reconciliation</td></tr>
+      <tr><td>VIEW + TRADE</td><td>GET + order placement</td><td>Trading bots, execution engines</td></tr>
+      <tr><td>VIEW + TRANSFER</td><td>GET + withdrawals/deposits</td><td>Treasury, settlement systems</td></tr>
+      <tr><td>VIEW + TRADE + TRANSFER</td><td>Most write operations</td><td>Full-service integrations</td></tr>
+      <tr><td>ADMIN</td><td>All including user/key management</td><td>Platform management</td></tr>
+    </tbody>
+  </table>
+
+  <div class="cards" style="margin-bottom:24px">
+    <div class="card">
+      <h3>Granularity Levels</h3>
+      <div style="display:flex;flex-direction:column;gap:7px;font-size:.77rem">
+        <div><span class="tag t-blue">Endpoint-specific</span><span style="color:#94a3b8;margin-left:6px">Most granular — per-endpoint allow/deny</span></div>
+        <div><span class="tag t-amber">Category READ/WRITE</span><span style="color:#94a3b8;margin-left:6px">Category-level read or write access</span></div>
+        <div><span class="tag t-slate">ALL READ / ALL WRITE</span><span style="color:#94a3b8;margin-left:6px">Broadest — all read or all write operations</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1c. Consensus & Approval Policy -->
+  <p class="section-label">Consensus &amp; Approval Policy</p>
+  <div class="cards" style="margin-bottom:24px">
+    <div class="card">
+      <h3>How it Works</h3>
+      <p style="font-size:.77rem;color:#94a3b8">Every significant operation generates a <strong style="color:#fde68a">PENDING Activity</strong>. A configured quorum of approvers must act before it proceeds. Configurable per portfolio: threshold type (MAJORITY or ALL), time window (hours before expiry), transfer size tiers, and video verification for large transfers.</p>
+    </div>
+    <div class="card">
+      <h3>Vault-specific Policy</h3>
+      <p style="font-size:.77rem;color:#94a3b8">VAULT withdrawals have a <strong style="color:#f1f5f9">separate, typically stricter</strong> approval policy. Configured independently from the portfolio's standard transfer policy.</p>
+    </div>
+  </div>
+
+  <p class="section-label">Transfer Approval Tier Model</p>
+  <table class="wt-table">
+    <thead>
+      <tr><th>Tier</th><th>Transfer Size</th><th>Approvals Required</th><th>Video Required</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Auto-approve</td><td>Below floor (e.g. &lt;$10k)</td><td>0</td><td>No</td></tr>
+      <tr><td>Standard consensus</td><td>Mid-range ($10k–$1M)</td><td>N of M approvers</td><td>No</td></tr>
+      <tr><td>Enhanced consensus</td><td>Large ($1M–$10M)</td><td>All approvers</td><td>No</td></tr>
+      <tr><td>Video verification</td><td>Above ceiling (&gt;$10M)</td><td>All approvers</td><td>Yes — Authorized Signatories</td></tr>
+    </tbody>
+  </table>
+
+  <!-- 1d. Entity schemas -->
+  <p class="section-label">Entitlement Entity Schemas</p>
+  <div class="entity-grid">
+
+    <!-- USER -->
+    <div class="ent">
+      <div class="ent-hd" style="background:#1e1b4b;color:#c7d2fe;border-bottom:2px solid #6366f1">USER <span class="htag" style="background:#312e81;color:#c7d2fe">access control</span></div>
+      <div class="fdesc">A team member with a defined role on the Prime platform. Role and access_level together determine which portfolios the user participates in and what operations they can initiate or approve.</div>
+      <div class="frow"><span class="fn">user_id</span><span class="ft">string</span><span class="fn-pk">PK</span></div>
+      <div class="frow"><span class="fn">entity_id</span><span class="ft">string</span><span class="fn-fk">FK → ENTITY</span></div>
+      <div class="frow"><span class="fn">name</span><span class="ft">string</span><span class="fn-req">req</span></div>
+      <div class="frow"><span class="fn">email</span><span class="ft">string</span><span class="fn-req">req</span></div>
+      <div class="frow"><span class="fn">role</span><span class="ft">enum</span><span class="fn-en">ADMINISTRATOR | AUTHORIZED_SIGNATORY | FULL_TRADER | INITIATOR | APPROVER | TEAM_MANAGER | VIEWER</span></div>
+      <div class="frow"><span class="fn">access_level</span><span class="ft">enum</span><span class="fn-en">ENTITY | PORTFOLIO</span></div>
+      <div class="fdesc">ENTITY: same role across all portfolios, auto-added to new ones. PORTFOLIO: unique role per portfolio, not auto-added.</div>
+      <div class="frow"><span class="fn">portfolio_ids</span><span class="ft">string[]</span><span class="fn-opt">FK array</span></div>
+      <div class="fdesc">FK array → PORTFOLIO. Null if access_level is ENTITY (implicitly all portfolios).</div>
+      <div class="frow"><span class="fn">status</span><span class="ft">enum</span><span class="fn-en">ACTIVE | INACTIVE</span></div>
+      <div class="frow"><span class="fn">created_at</span><span class="ft">datetime</span><span class="fn-req">req</span></div>
+    </div>
+
+    <!-- API_KEY -->
+    <div class="ent">
+      <div class="ent-hd" style="background:#0c2a3f;color:#7dd3fc;border-bottom:2px solid #0ea5e9">API_KEY <span class="htag" style="background:#0c4a6e;color:#bae6fd">authentication</span></div>
+      <div class="fdesc">A credential used to authenticate API requests. Scope level determines which portfolios are accessible; permissions determine which operations are permitted. IP allowlist restricts source addresses.</div>
+      <div class="frow"><span class="fn">api_key_id</span><span class="ft">string</span><span class="fn-pk">PK</span></div>
+      <div class="frow"><span class="fn">entity_id</span><span class="ft">string</span><span class="fn-fk">FK → ENTITY</span></div>
+      <div class="frow"><span class="fn">portfolio_id</span><span class="ft">string</span><span class="fn-opt">FK → PORTFOLIO</span></div>
+      <div class="fdesc">Nullable. Null = entity-level key (all portfolios). Non-null = portfolio-scoped key.</div>
+      <div class="frow"><span class="fn">scope_level</span><span class="ft">enum</span><span class="fn-en">PORTFOLIO | ENTITY | ORGANIZATION</span></div>
+      <div class="frow"><span class="fn">permissions</span><span class="ft">enum[]</span><span class="fn-en">VIEW | TRADE | TRANSFER | MANAGE</span></div>
+      <div class="fdesc">Array of permission grants. VIEW is always required. MANAGE covers user and key management operations.</div>
+      <div class="frow"><span class="fn">ip_allowlist</span><span class="ft">string[]</span><span class="fn-opt">optional</span></div>
+      <div class="fdesc">Array of CIDR strings. Empty array = any IP permitted. Restricts which source IPs can use this key.</div>
+      <div class="frow"><span class="fn">nickname</span><span class="ft">string</span><span class="fn-req">req</span></div>
+      <div class="frow"><span class="fn">created_at</span><span class="ft">datetime</span><span class="fn-req">req</span></div>
+      <div class="frow"><span class="fn">expires_at</span><span class="ft">datetime</span><span class="fn-opt">optional</span></div>
+      <div class="fdesc">Null = non-expiring key. Set to enforce automatic rotation.</div>
+    </div>
+
+    <!-- CONSENSUS_POLICY -->
+    <div class="ent">
+      <div class="ent-hd eh-trn">CONSENSUS_POLICY <span class="htag" style="background:#92400e;color:#fde68a">approval workflow</span></div>
+      <div class="fdesc">Defines the approval requirements for a Portfolio. One policy per portfolio. Controls quorum threshold type, time window for approvers to act, tiered transfer approval rules, and video verification requirements for large transfers.</div>
+      <div class="frow"><span class="fn">policy_id</span><span class="ft">string</span><span class="fn-pk">PK</span></div>
+      <div class="frow"><span class="fn">portfolio_id</span><span class="ft">string</span><span class="fn-fk">FK → PORTFOLIO (1:1)</span></div>
+      <div class="frow"><span class="fn">threshold_type</span><span class="ft">enum</span><span class="fn-en">MAJORITY | ALL</span></div>
+      <div class="fdesc">MAJORITY = more than half of approvers must consent. ALL = every approver must consent.</div>
+      <div class="frow"><span class="fn">transfer_tiers</span><span class="ft">JSON[]</span><span class="fn-req">req</span></div>
+      <div class="fdesc">Array of tier objects: {label, min, max, required_approvers, video_required}. Tiers are non-overlapping and cover the full range from 0 to infinity.</div>
+      <div class="frow"><span class="fn">vault_withdrawal_policy</span><span class="ft">JSON</span><span class="fn-opt">optional</span></div>
+      <div class="fdesc">Separate tier config for VAULT wallet withdrawals. Typically stricter than the standard transfer tiers.</div>
+      <div class="frow"><span class="fn">time_window_hours</span><span class="ft">number</span><span class="fn-req">req</span></div>
+      <div class="fdesc">Hours approvers have to act before the pending Activity expires and must be resubmitted.</div>
+      <div class="frow"><span class="fn">updated_at</span><span class="ft">datetime</span><span class="fn-req">req</span></div>
+    </div>
+
+  </div><!-- end entitlement entity-grid -->
+
+  <!-- Relationship table for entitlement entities -->
+  <p class="section-label">Entitlement Model — Relationship Summary</p>
+  <table class="rel-table" style="margin-bottom:28px">
+    <thead><tr><th>From</th><th>To</th><th>Cardinality</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td>ENTITY</td><td>USER</td><td>1 : many</td><td>Entity-level users hold roles across all portfolios; portfolio-level users are scoped per portfolio</td></tr>
+      <tr><td>ENTITY</td><td>API_KEY</td><td>1 : many</td><td>Keys may be scoped to entity (all portfolios) or to a single portfolio</td></tr>
+      <tr><td>PORTFOLIO</td><td>CONSENSUS_POLICY</td><td>1 : 1</td><td>Each portfolio has exactly one consensus policy governing all approval workflows</td></tr>
+      <tr><td>USER</td><td>PORTFOLIO</td><td>many : many</td><td>Portfolio-level users hold unique roles per portfolio; entity-level users participate in all</td></tr>
+      <tr><td>CONSENSUS_POLICY</td><td>ACTIVITY</td><td>1 : many</td><td>The policy determines how Activities (withdrawals, vault ops, transfers) are approved or rejected</td></tr>
+    </tbody>
+  </table>
+
+  <!-- 1e. Access control matrix -->
+  <p class="section-label">Access Control Matrix</p>
+  <table class="wt-table">
+    <thead>
+      <tr><th>Operation</th><th>Admin</th><th>Auth. Sig</th><th>Full Trader</th><th>Initiator</th><th>Approver</th><th>Team Mgr</th><th>Viewer</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Place Order</td><td>✓</td><td>—</td><td>✓</td><td>initiate</td><td>—</td><td>—</td><td>—</td></tr>
+      <tr><td>Cancel Order</td><td>✓</td><td>—</td><td>✓</td><td>initiate</td><td>—</td><td>—</td><td>—</td></tr>
+      <tr><td>Create Withdrawal</td><td>✓</td><td>✓</td><td>✓</td><td>initiate</td><td>—</td><td>—</td><td>—</td></tr>
+      <tr><td>Approve Withdrawal</td><td>✓</td><td>✓</td><td>—</td><td>—</td><td>approve</td><td>—</td><td>—</td></tr>
+      <tr><td>Create VAULT Wallet</td><td>✓</td><td>—</td><td>—</td><td>initiate</td><td>—</td><td>—</td><td>—</td></tr>
+      <tr><td>Approve VAULT Creation</td><td>✓</td><td>✓</td><td>—</td><td>—</td><td>approve</td><td>—</td><td>—</td></tr>
+      <tr><td>Create API Key</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+      <tr><td>Add Team Member</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>—</td><td>✓</td><td>—</td></tr>
+      <tr><td>Edit Consensus Policy</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+      <tr><td>View Balances/Activities</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+      <tr><td>Create Advanced Transfer</td><td>✓</td><td>✓</td><td>✓</td><td>initiate</td><td>—</td><td>—</td><td>—</td></tr>
+      <tr><td>Close Portfolio</td><td>✓</td><td>—</td><td>—</td><td>initiate</td><td>—</td><td>—</td><td>—</td></tr>
+    </tbody>
+  </table>
+
+</div><!-- end entitlement section -->
+
 <footer>Coinbase CDP API v2 · Coinbase Prime API · Source: docs.cdp.coinbase.com · Updated 2026-07-22 — Creation mechanics, transfer flows, deletion conditions added</footer>
 </div>
 </body>
