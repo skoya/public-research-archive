@@ -2,6 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<!-- Analytics: replace G-XXXXXXXXXX with your GA4 Measurement ID -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-XXXXXXXXXX');
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Coinbase Prime API Simulator</title>
 <style>
@@ -103,6 +111,10 @@ table.list td{padding:7px 8px;border-bottom:1px solid #16213a;vertical-align:mid
 .st-OPEN,.st-PENDING,.st-BONDING,.st-UNBONDING{background:#422006;color:#fbbf24}
 .st-FILLED,.st-ACTIVE,.st-COMPLETED,.st-APPROVED{background:#052e16;color:#4ade80}
 .st-CANCELLED,.st-REJECTED,.st-FAILED,.st-CLOSED{background:#450a0a;color:#f87171}
+.st-CREATED{background:#1e1b4b;color:#a5b4fc}
+.st-PROCESSING{background:#172554;color:#93c5fd}
+.st-DONE{background:#052e16;color:#4ade80}
+.st-EXPIRED{background:#450a0a;color:#f87171}
 /* activity log */
 .act{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:10px}
 .act.pending{border-color:#92400e;box-shadow:0 0 0 1px #92400e inset}
@@ -120,6 +132,47 @@ table.list td{padding:7px 8px;border-bottom:1px solid #16213a;vertical-align:mid
 .tr-box{border:1px dashed #92400e;border-radius:8px;padding:12px;margin-top:14px;background:#1c1408}
 .tr-box h4{font-size:11px;color:#fbbf24;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px}
 .empty{color:var(--faint);font-size:12.5px;font-style:italic;padding:8px 0}
+/* modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;display:flex;align-items:center;justify-content:center}
+.modal-box{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;min-width:380px;max-width:520px;max-height:80vh;overflow-y:auto}
+.modal-box h2{font-size:15px;font-weight:700;color:#f8fafc;margin-bottom:16px}
+/* guide */
+.guide-fab{position:fixed;bottom:24px;right:24px;z-index:900;background:var(--blue);border:none;color:#fff;font-size:13px;font-weight:700;padding:10px 18px;border-radius:50px;cursor:pointer;box-shadow:0 4px 20px rgba(59,130,246,.4)}
+.guide-fab:hover{background:#2563eb}
+.guide-panel{position:fixed;bottom:80px;right:24px;z-index:901;width:360px;max-height:calc(100vh - 120px);display:none;flex-direction:column;background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,.5)}
+.guide-panel.open{display:flex}
+.guide-header{background:#0b1120;border-bottom:1px solid var(--border);padding:14px 16px;border-radius:12px 12px 0 0;display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+.guide-header h3{font-size:13px;font-weight:700;color:#f8fafc}
+.guide-body{padding:16px;overflow-y:auto;flex:1}
+.guide-step-counter{font-size:10px;color:var(--faint);font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
+.guide-step-title{font-size:14px;font-weight:700;color:#f8fafc;margin-bottom:8px}
+.guide-step-desc{font-size:12.5px;color:#cbd5e1;line-height:1.6;margin-bottom:14px}
+.guide-step-action{font-size:11.5px;background:#0b1120;border:1px solid var(--border);border-radius:6px;padding:8px 10px;color:#7dd3fc;font-family:ui-monospace,monospace;margin-bottom:14px}
+.guide-btns{display:flex;gap:8px;justify-content:space-between;align-items:center}
+.scenario-card{background:#0b1120;border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px;cursor:pointer;transition:border-color .12s}
+.scenario-card:hover{border-color:var(--blue)}
+.scenario-card h4{font-size:13px;font-weight:700;color:#f8fafc;margin-bottom:4px}
+.scenario-card p{font-size:11.5px;color:var(--muted);line-height:1.5}
+.guide-highlight{box-shadow:0 0 0 3px #3b82f6, 0 0 20px rgba(59,130,246,.3) !important;border-radius:8px;transition:box-shadow .2s}
+.recon-summary{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:16px}
+.recon-stat{background:#0b1120;border:1px solid var(--border);border-radius:8px;padding:10px 12px}
+.recon-stat .rs-label{font-size:10px;color:var(--faint);letter-spacing:.04em;margin-bottom:4px}
+.recon-stat .rs-val{font-size:16px;font-weight:700;color:#f1f5f9;font-family:ui-monospace,monospace}
+.type-ORDER{color:#818cf8} .type-WITHDRAWAL{color:#f87171} .type-CONVERSION{color:#34d399}
+.type-STAKING{color:#fbbf24} .type-WIRE_RECEIPT{color:#60a5fa} .type-ADVANCED_TRANSFER{color:#c084fc}
+.role-badge{font-size:9px;font-weight:700;padding:2px 7px;border-radius:9999px;letter-spacing:.04em;white-space:nowrap}
+.role-ADMINISTRATOR{background:#4c1d95;color:#ddd6fe}
+.role-AUTHORIZED_SIGNATORY{background:#4c0519;color:#fca5a5}
+.role-FULL_TRADER{background:#064e3b;color:#6ee7b7}
+.role-INITIATOR{background:#1e3a5f;color:#93c5fd}
+.role-APPROVER{background:#78350f;color:#fde68a}
+.role-TEAM_MANAGER{background:#334155;color:#cbd5e1}
+.role-VIEWER{background:#0c4a6e;color:#bae6fd}
+.perm-badge{font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;letter-spacing:.04em;margin-right:2px}
+.perm-VIEW{background:#0c4a6e;color:#bae6fd}
+.perm-TRADE{background:#064e3b;color:#6ee7b7}
+.perm-TRANSFER{background:#78350f;color:#fde68a}
+.perm-MANAGE{background:#4c0519;color:#fca5a5}
 </style>
 </head>
 <body>
@@ -128,8 +181,21 @@ table.list td{padding:7px 8px;border-bottom:1px solid #16213a;vertical-align:mid
   <span class="pill">Prime API</span>
   <span style="font-size:11px;color:var(--faint)">Simulated environment — no real API calls</span>
   <div class="spacer"></div>
+  <span style="font-size:10px;color:var(--faint);display:flex;align-items:center;gap:4px">🔑 <span id="active-key-indicator"></span></span>
+  <button onclick="showStats()">&#128202; Stats</button>
+  <button onclick="toggleDiag()" id="diag-btn">&#128270; Diagnostics</button>
   <button onclick="resetState()">&#8635; Reset demo state</button>
 </header>
+<div id="diag-drawer" style="display:none;position:fixed;bottom:0;left:0;right:0;height:340px;background:#060d1a;border-top:2px solid var(--border);z-index:950;flex-direction:column">
+  <div style="display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:1px solid var(--border);background:#0b1120;flex-shrink:0">
+    <span style="font-size:11px;font-weight:700;color:#f8fafc;letter-spacing:.04em">&#128270; DIAGNOSTICS</span>
+    <span style="flex:1"></span>
+    <button id="diag-copy-btn" onclick="copyDiag()" style="background:var(--card);border:1px solid var(--border);color:var(--muted);font-size:11px;padding:3px 10px;border-radius:4px;cursor:pointer">Copy JSON</button>
+    <button onclick="clearDiag()" style="background:var(--card);border:1px solid var(--border);color:var(--muted);font-size:11px;padding:3px 10px;border-radius:4px;cursor:pointer">Clear</button>
+    <button onclick="toggleDiag()" style="background:none;border:none;color:var(--faint);cursor:pointer;font-size:16px;line-height:1">&#10005;</button>
+  </div>
+  <div id="diag-content" style="overflow-y:auto;flex:1;padding:10px 14px"></div>
+</div>
 <div class="layout">
   <div class="panel left" id="tree"></div>
   <div class="panel center" id="main"></div>
@@ -167,9 +233,74 @@ var PRICES={BTC:60000,ETH:3000,SOL:150,USD:1,USDC:1,PYUSD:1};
 var NETWORKS={BTC:'bitcoin-mainnet',ETH:'ethereum-mainnet',SOL:'solana-mainnet',USDC:'ethereum-mainnet',PYUSD:'ethereum-mainnet',USD:'fiat'};
 var COMMISSION_RATE=0.0015;
 
+/* ============================== diagnostics ============================== */
+var DIAG_LOG=[];
+var DIAG_OPEN=false;
+function diagLog(endpoint,req,ok,statusLine,res){
+  DIAG_LOG.unshift({ts:new Date().toISOString(),endpoint:endpoint,req:req,ok:ok,statusLine:statusLine,res:res});
+  if(DIAG_LOG.length>100)DIAG_LOG.pop();
+  if(DIAG_OPEN)renderDiag();
+}
+function toggleDiag(){
+  DIAG_OPEN=!DIAG_OPEN;
+  var d=document.getElementById('diag-drawer');
+  if(!d)return;
+  d.style.display=DIAG_OPEN?'flex':'none';
+  if(DIAG_OPEN)renderDiag();
+}
+function renderDiag(){
+  var d=document.getElementById('diag-content');
+  if(!d)return;
+  var vp='<div style="font-size:10px;color:var(--faint);margin-bottom:10px;font-family:ui-monospace,monospace">'+
+    '&#128190; Viewport: '+window.innerWidth+'&times;'+window.innerHeight+'px &nbsp;|&nbsp; '+
+    'Guide panel height: ~'+(Math.min(window.innerHeight-120,999))+'px max &nbsp;|&nbsp; '+
+    'API calls this session: '+DIAG_LOG.length+
+  '</div>';
+  var stateSnap='';
+  if(STATE){
+    var portfolios=STATE.portfolios||[];
+    var wallets=portfolios.reduce(function(a,p){return a+(p.wallets||[]).length;},0);
+    var acts=STATE.activities?STATE.activities.length:0;
+    stateSnap='<div style="font-size:10px;color:var(--faint);font-family:ui-monospace,monospace;margin-bottom:10px">'+
+      '&#127970; Entity: '+esc(STATE.entity?STATE.entity.entity_name:'—')+' &nbsp;|&nbsp; '+
+      'Portfolios: '+portfolios.length+' &nbsp;|&nbsp; Wallets: '+wallets+' &nbsp;|&nbsp; Activities: '+acts+
+    '</div>';
+  }
+  var rows=DIAG_LOG.length?DIAG_LOG.map(function(e,i){
+    var color=e.ok?'#22c55e':'#ef4444';
+    var expanded=i===0;
+    return '<details '+(expanded?'open':'')+' style="border:1px solid var(--border);border-radius:6px;margin-bottom:6px;overflow:hidden">'+
+      '<summary style="padding:7px 10px;cursor:pointer;font-family:ui-monospace,monospace;font-size:11px;display:flex;align-items:center;gap:8px;background:#0b1120">'+
+        '<span style="color:'+color+';font-weight:700">'+(e.ok?'✓':'✗')+'</span>'+
+        '<span style="color:#f8fafc;flex:1">'+esc(e.endpoint)+'</span>'+
+        '<span style="color:var(--faint)">'+esc(e.statusLine)+'</span>'+
+        '<span style="color:var(--faint);margin-left:8px">'+esc(e.ts.slice(11,19))+'</span>'+
+      '</summary>'+
+      '<div style="padding:8px 10px;background:#060d1a;display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
+        '<div><div style="font-size:9px;color:var(--faint);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px">Request</div>'+
+          '<pre style="font-size:10px;color:#e2e8f0;white-space:pre-wrap;word-break:break-all;max-height:160px;overflow-y:auto">'+hlJSON(e.req)+'</pre></div>'+
+        '<div><div style="font-size:9px;color:var(--faint);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px">Response</div>'+
+          '<pre style="font-size:10px;color:#e2e8f0;white-space:pre-wrap;word-break:break-all;max-height:160px;overflow-y:auto">'+hlJSON(e.res)+'</pre></div>'+
+      '</div>'+
+    '</details>';
+  }).join(''):'<div style="font-size:12px;color:var(--faint);padding:20px;text-align:center">No API calls yet this session.</div>';
+  d.innerHTML=vp+stateSnap+rows;
+}
+function clearDiag(){DIAG_LOG=[];if(DIAG_OPEN)renderDiag();}
+function copyDiag(){
+  var text=JSON.stringify(DIAG_LOG,null,2);
+  navigator.clipboard.writeText(text).then(function(){
+    var btn=document.getElementById('diag-copy-btn');
+    if(btn){btn.textContent='Copied!';setTimeout(function(){btn.textContent='Copy JSON';},1500);}
+  });
+}
+
 /* ============================== state ============================== */
 var STATE=null;
 var UI={sel:null,tab:'overview',open:{},resp:{}};
+var AT_LEGS=[];
+var ANALYTICS={};
+var GUIDE={open:false,scenarioIdx:-1,stepIdx:0};
 
 function newBalance(amount,sym){
   return {symbol:sym,amount:amount,holds:0,withdrawable_amount:amount,fiat_amount:+(amount*(PRICES[sym]||0)).toFixed(2),
@@ -201,14 +332,40 @@ function seedState(){
   wallets.forEach(function(w){
     depositAddresses[w.id]=w.symbol==='USD'?[]:[{wallet_id:w.id,address:fakeAddress(w.symbol),network_id:NETWORKS[w.symbol],type:'static',created_at:now()}];
   });
+  var uAlice={user_id:uuid(),name:'Alice Chen',email:'alice@acmecorp.com',role:'ADMINISTRATOR',access_level:'ENTITY',portfolio_ids:null,status:'ACTIVE',created_at:now()};
+  var uBob={user_id:uuid(),name:'Bob Singh',email:'bob@acmecorp.com',role:'INITIATOR',access_level:'PORTFOLIO',portfolio_ids:[],status:'ACTIVE',created_at:now()};
+  var uCarol={user_id:uuid(),name:'Carol Wu',email:'carol@acmecorp.com',role:'APPROVER',access_level:'PORTFOLIO',portfolio_ids:[],status:'ACTIVE',created_at:now()};
+  var uDavid={user_id:uuid(),name:'David Kim',email:'david@acmecorp.com',role:'VIEWER',access_level:'ENTITY',portfolio_ids:null,status:'ACTIVE',created_at:now()};
+  var kReport={api_key_id:uuid(),nickname:'Reporting Key',entity_id:entId,portfolio_id:null,scope_level:'ENTITY',permissions:['VIEW'],ip_allowlist:['10.0.0.1/32'],created_at:now(),expires_at:null};
+  var kTrading={api_key_id:uuid(),nickname:'Trading Bot',entity_id:entId,portfolio_id:pT.id,scope_level:'PORTFOLIO',permissions:['VIEW','TRADE'],ip_allowlist:[],created_at:now(),expires_at:null};
+  var kTreasury={api_key_id:uuid(),nickname:'Treasury System',entity_id:entId,portfolio_id:null,scope_level:'ENTITY',permissions:['VIEW','TRANSFER'],ip_allowlist:['192.168.1.0/24'],created_at:now(),expires_at:null};
+  var consensusPolicies={};
+  [pT,pC].forEach(function(p){
+    consensusPolicies[p.id]={
+      policy_id:uuid(),portfolio_id:p.id,threshold_type:'MAJORITY',
+      transfer_tiers:[
+        {label:'Auto-approve',min:0,max:10000,required_approvers:0,video_required:false},
+        {label:'Standard consensus',min:10000,max:1000000,required_approvers:2,video_required:false},
+        {label:'Enhanced consensus',min:1000000,max:10000000,required_approvers:3,video_required:false},
+        {label:'Video verification',min:10000000,max:null,required_approvers:3,video_required:true}
+      ],
+      time_window_hours:24,updated_at:now()
+    };
+    uBob.portfolio_ids.push(p.id);
+    uCarol.portfolio_ids.push(p.id);
+  });
   STATE={
     org:{organization_id:orgId,name:'Acme Corp'},
     entity:{entity_id:entId,entity_name:'Acme Prime',organization_id:orgId},
     portfolios:[pT,pC],
     wallets:wallets,
-    orders:[],withdrawals:[],conversions:[],stakingPositions:[],
+    orders:[],withdrawals:[],conversions:[],stakingPositions:[],advancedTransfers:[],
     depositAddresses:depositAddresses,
-    activities:[],idem:{}
+    activities:[],idem:{},
+    users:[uAlice,uBob,uCarol,uDavid],
+    apiKeys:[kReport,kTrading,kTreasury],
+    consensusPolicies:consensusPolicies,
+    activeApiKeyId:kReport.api_key_id
   };
   UI.sel={type:'wallet',id:wBTC.id};UI.tab='overview';UI.resp={};
   UI.open={org:true,entity:true};UI.open['p:'+pT.id]=true;UI.open['p:'+pC.id]=true;
@@ -260,6 +417,27 @@ function approveActivity(id){
   }
   else if(r.kind==='WALLET_CLOSURE'){var w3=getWallet(r.id);if(w3)w3.status='CLOSED';a.status='COMPLETED';}
   else if(r.kind==='PORTFOLIO_CLOSURE'){var p3=getPortfolio(r.id);if(p3){p3.status='CLOSED';walletsOf(p3.id).forEach(function(w){w.status='CLOSED';});}a.status='COMPLETED';}
+  else if(r.kind==='ADVANCED_TRANSFER'){
+    var at=STATE.advancedTransfers.filter(function(x){return x.id===r.id;})[0];
+    if(at){
+      at.state='ADVANCED_TRANSFER_STATE_PROCESSING';
+      at.fund_movements.forEach(function(leg){
+        var amt=parseFloat(leg.amount);
+        if(leg.source.type==='WALLET'){var sw=getWallet(leg.source.value);if(sw){
+          sw.balance.holds=+(sw.balance.holds-amt).toFixed(8);
+          sw.balance.amount=+(sw.balance.amount-amt).toFixed(8);
+          sw.balance.withdrawable_amount=Math.max(0,+(sw.balance.amount-sw.balance.holds).toFixed(8));
+          recalcFiat(sw);}}
+        if(leg.target.type==='WALLET'){var tw=getWallet(leg.target.value);if(tw){
+          tw.balance.amount=+(tw.balance.amount+amt).toFixed(8);
+          tw.balance.withdrawable_amount=+(tw.balance.withdrawable_amount+amt).toFixed(8);
+          recalcFiat(tw);}}
+      });
+      at.state='ADVANCED_TRANSFER_STATE_DONE';
+      at.completed_at=now();
+    }
+    a.status='COMPLETED';
+  }
   else a.status='APPROVED';
   renderAll();
 }
@@ -282,6 +460,17 @@ function rejectActivity(id){
       w2.balance.holds=+(w2.balance.holds-p.amount).toFixed(8);
       w2.balance.withdrawable_amount=+(w2.balance.withdrawable_amount+p.amount).toFixed(8);
       p.status='CANCELLED';}
+  }
+  else if(r.kind==='ADVANCED_TRANSFER'){
+    var at=STATE.advancedTransfers.filter(function(x){return x.id===r.id;})[0];
+    if(at){
+      at.fund_movements.forEach(function(leg){
+        if(leg.source.type==='WALLET'){var sw=getWallet(leg.source.value);if(sw){var amt=parseFloat(leg.amount);
+          sw.balance.holds=+(sw.balance.holds-amt).toFixed(8);
+          sw.balance.withdrawable_amount=+(sw.balance.withdrawable_amount+amt).toFixed(8);}}
+      });
+      at.state='ADVANCED_TRANSFER_STATE_CANCELLED';
+    }
   }
   a.status='REJECTED';
   renderAll();
@@ -309,6 +498,7 @@ function advanceStake(txid){
 
 /* ============================== response rendering ============================== */
 function respHTML(endpoint,req,ok,statusLine,res,note){
+  diagLog(endpoint,req,ok,statusLine,res);
   var h='';
   if(note)h+='<div class="response-panel note" style="margin-bottom:12px"><div class="status-line">'+esc(note)+'</div></div>';
   h+='<div class="rr-grid">';
@@ -330,6 +520,32 @@ function restoreResp(){
   var r=document.getElementById('resp-area');
   if(r&&UI.resp[respKey()])r.innerHTML=UI.resp[respKey()];
 }
+
+/* ============================== analytics ============================== */
+function trackOp(epKey){ANALYTICS[epKey]=(ANALYTICS[epKey]||0)+1;}
+function showStats(){
+  var total=Object.keys(ANALYTICS).reduce(function(s,k){return s+ANALYTICS[k];},0);
+  var rows=Object.keys(ANALYTICS).sort(function(a,b){return ANALYTICS[b]-ANALYTICS[a];});
+  var tableRows=rows.length?rows.map(function(k){
+    return '<tr><td style="padding:6px 10px;color:#e2e8f0">'+esc(k)+'</td><td style="padding:6px 10px;text-align:right;font-family:ui-monospace,monospace;color:#fbbf24">'+ANALYTICS[k]+'</td></tr>';
+  }).join(''):'<tr><td colspan="2" style="padding:10px;color:var(--faint);font-style:italic">No API calls tracked yet this session.</td></tr>';
+  var html='<div class="modal-overlay" id="stats-modal" onclick="if(event.target===this)closeStats()">'+
+  '<div class="modal-box">'+
+  '<h2>&#128202; Session Analytics</h2>'+
+  '<table style="width:100%;border-collapse:collapse;margin-bottom:14px">'+
+  '<thead><tr><th style="text-align:left;font-size:10px;color:var(--faint);letter-spacing:.06em;text-transform:uppercase;padding:4px 10px;border-bottom:1px solid var(--border)">Operation</th>'+
+  '<th style="text-align:right;font-size:10px;color:var(--faint);letter-spacing:.06em;text-transform:uppercase;padding:4px 10px;border-bottom:1px solid var(--border)">Calls</th></tr></thead>'+
+  '<tbody>'+tableRows+'</tbody>'+
+  '<tfoot><tr><td style="padding:8px 10px;font-weight:700;color:#f8fafc;border-top:1px solid var(--border)">Total</td>'+
+  '<td style="padding:8px 10px;text-align:right;font-weight:700;font-family:ui-monospace,monospace;color:#22c55e;border-top:1px solid var(--border)">'+total+'</td></tr></tfoot>'+
+  '</table>'+
+  '<p style="font-size:11px;color:var(--faint);margin-bottom:16px">Counts reset on page reload. For real traffic analytics, configure GA4 above.</p>'+
+  '<button class="btn secondary" onclick="closeStats()">Close</button>'+
+  '</div></div>';
+  var el=document.createElement('div');el.id='stats-overlay-wrap';el.innerHTML=html;
+  document.body.appendChild(el);
+}
+function closeStats(){var el=document.getElementById('stats-overlay-wrap');if(el)el.remove();}
 
 /* ============================== rendering: tree ============================== */
 function renderTree(){
@@ -415,15 +631,18 @@ function viewOrg(){
   '<td><button class="btn small secondary" onclick="selectNode(\'entity\',\''+STATE.entity.entity_id+'\')">Open</button></td></tr></table></div>';
 }
 function viewEntity(){
-  return '<div class="crumbs"><b>'+esc(STATE.org.name)+'</b> / Entity</div><div class="title-row"><h2>'+esc(STATE.entity.entity_name)+'</h2><span class="idchip">'+STATE.entity.entity_id+'</span></div>'+
-  tabsHTML([['overview','Overview'],['portfolios','Portfolios']])+
-  (UI.tab==='portfolios'?viewEntityPortfolios():
-  '<div class="card"><h3>Entity</h3><div class="kv">'+
+  var h='<div class="crumbs"><b>'+esc(STATE.org.name)+'</b> / Entity</div><div class="title-row"><h2>'+esc(STATE.entity.entity_name)+'</h2><span class="idchip">'+STATE.entity.entity_id+'</span></div>'+
+  tabsHTML([['overview','Overview'],['portfolios','Portfolios'],['users','Users'],['api-keys','API Keys']]);
+  if(UI.tab==='portfolios')h+=viewEntityPortfolios();
+  else if(UI.tab==='users')h+=viewEntityUsers();
+  else if(UI.tab==='api-keys')h+=viewEntityApiKeys();
+  else h+='<div class="card"><h3>Entity</h3><div class="kv">'+
   '<span class="k">entity_id</span><span class="v">'+STATE.entity.entity_id+'</span>'+
   '<span class="k">entity_name</span><span class="v">'+esc(STATE.entity.entity_name)+'</span>'+
   '<span class="k">organization_id</span><span class="v">'+STATE.entity.organization_id+'</span>'+
   '<span class="k">portfolios</span><span class="v">'+STATE.portfolios.length+'</span></div>'+
-  '<p class="tip" style="margin-top:12px">Entities are provisioned by Coinbase — no self-serve creation or deletion. Portfolios are created under the entity via API (see Portfolios tab).</p></div>')+respArea();
+  '<p class="tip" style="margin-top:12px">Entities are provisioned by Coinbase — no self-serve creation or deletion. Portfolios are created under the entity via API (see Portfolios tab).</p></div>';
+  return h+respArea();
 }
 function viewEntityPortfolios(){
   var h='<div class="card"><h3>Create Portfolio</h3>'+
@@ -448,10 +667,13 @@ function viewPortfolio(){
   var h='<div class="crumbs"><b>'+esc(STATE.org.name)+'</b> / <b>'+esc(STATE.entity.entity_name)+'</b> / Portfolio</div>'+
   '<div class="title-row"><h2>'+esc(p.name)+'</h2><span class="pbadge pb-'+p.portfolio_type+'">'+p.portfolio_type+'</span>'+
   '<span class="st st-'+p.status+'">'+p.status+'</span><span class="idchip">'+p.id+'</span></div>'+
-  tabsHTML([['overview','Overview'],['wallets','Wallets'],['orders','Orders'],['activities','Activities']]);
+  tabsHTML([['overview','Overview'],['wallets','Wallets'],['orders','Orders'],['activities','Activities'],['advanced-transfers','Adv. Transfers'],['recon','Reconciliation'],['policy','Policy']]);
   if(UI.tab==='wallets')h+=viewPortfolioWallets(p);
   else if(UI.tab==='orders')h+=viewOrders(p.id);
   else if(UI.tab==='activities')h+=viewActivitiesTab(p.id);
+  else if(UI.tab==='advanced-transfers')h+=viewAdvancedTransfers(p);
+  else if(UI.tab==='recon')h+=viewReconciliation(p);
+  else if(UI.tab==='policy')h+=viewConsensusPolicy(p);
   else h+=viewPortfolioOverview(p);
   return h+respArea();
 }
@@ -737,15 +959,190 @@ function viewStaking(w){
   return h;
 }
 
+/* ---------- advanced transfers ---------- */
+function viewAdvancedTransfers(p){
+  var pid=p.id;
+  var h='<div class="card"><h3>Create Advanced Transfer</h3>'+
+  '<div class="endpoint"><span class="verb">POST</span>/v1/portfolios/'+pid+'/advanced_transfers</div>'+
+  '<div class="banner">&#128274; Restricted feature — contact Prime Operations to enable Advanced Transfers on your portfolio.</div>'+
+  '<div class="fgrid">'+
+  '<div class="field"><label>type <span class="req">*</span></label><select id="at-type"><option value="ADVANCED_TRANSFER_TYPE_BLIND_MATCH">ADVANCED_TRANSFER_TYPE_BLIND_MATCH</option></select></div>'+
+  '</div>'+
+  '<div style="margin-top:14px;margin-bottom:6px;font-size:10px;font-weight:700;color:var(--faint);letter-spacing:.08em;text-transform:uppercase">Blind Match Metadata</div>'+
+  '<div class="fgrid">'+
+  '<div class="field"><label>reference_id <span class="req">*</span></label><input id="at-ref" type="text" placeholder="BM-abc123"></div>'+
+  '<div class="field"><label>settlement_date YYYYMMDD <span class="req">*</span></label><input id="at-sdate" type="text" placeholder="20260724"></div>'+
+  '<div class="field"><label>trade_date YYYYMMDD</label><input id="at-tdate" type="text" placeholder="20260723 (optional)"></div>'+
+  '<div class="field"><label>settlement_time HHMM</label><input id="at-stime" type="text" placeholder="0930" value="0930"></div>'+
+  '</div>'+
+  '<div style="margin-top:14px;margin-bottom:6px;font-size:10px;font-weight:700;color:var(--faint);letter-spacing:.08em;text-transform:uppercase">Fund Movements</div>'+
+  '<div id="at-legs"></div>'+
+  '<div class="btn-row">'+
+  '<button class="btn secondary" onclick="atAddLeg()">+ Add Leg</button>'+
+  '<button class="btn" onclick="opCreateAdvancedTransfer(\''+pid+'\')">Send Request</button>'+
+  '</div></div>';
+  var ats=STATE.advancedTransfers.filter(function(x){return x.portfolio_id===pid;});
+  h+='<div class="card"><h3>Advanced Transfers this session</h3>';
+  if(!ats.length)h+='<div class="empty">No advanced transfers yet.</div>';
+  else{
+    h+='<table class="list"><tr><th>type</th><th>reference_id</th><th>legs</th><th>state</th><th>id</th></tr>';
+    ats.forEach(function(at){
+      var typeShort=at.type.replace('ADVANCED_TRANSFER_TYPE_','');
+      var stateShort=at.state.replace('ADVANCED_TRANSFER_STATE_','');
+      h+='<tr>'+
+        '<td style="font-size:10.5px;font-weight:700;color:#93c5fd">'+esc(typeShort)+'</td>'+
+        '<td class="mono" style="font-size:11px">'+esc(at.blind_match_metadata.reference_id)+'</td>'+
+        '<td>'+at.fund_movements.length+'</td>'+
+        '<td><span class="st st-'+stateShort+'">'+stateShort+'</span></td>'+
+        '<td class="mono" style="font-size:10px">'+at.id+'</td>'+
+      '</tr>';
+    });
+    h+='</table>';
+  }
+  h+='</div>';
+  setTimeout(atInitLegs,0);
+  return h;
+}
+
+function atInitLegs(){
+  AT_LEGS=[];
+  var container=document.getElementById('at-legs');
+  if(!container)return;
+  container.innerHTML='';
+  atAddLeg();
+  atAddLeg();
+}
+
+function atAddLeg(){
+  var container=document.getElementById('at-legs');
+  if(!container)return;
+  var idx=AT_LEGS.length;
+  AT_LEGS.push({id:idx});
+  var locTypes='<option>WALLET</option><option>ADDRESS</option><option>PAYMENT_METHOD</option><option>COUNTERPARTY_ID</option><option>OTHER</option><option>MULTIPLE_ADDRESSES</option>';
+  var walletOpts='<option value="">— or select wallet —</option>'+
+    STATE.wallets.filter(function(w){return w.status==='ACTIVE';}).map(function(w){
+      return '<option value="'+w.id+'">'+esc(w.symbol)+' — '+esc(w.name)+'</option>';
+    }).join('');
+  var div=document.createElement('div');
+  div.id='at-leg-'+idx;
+  div.style.cssText='border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:10px;background:#0b1120';
+  div.innerHTML=
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'+
+    '<span style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.06em;text-transform:uppercase">LEG '+(idx+1)+'</span>'+
+    (idx>0?'<button class="btn small danger" onclick="atRemoveLeg('+idx+')">&#x2715; Remove</button>':'')+
+    '</div>'+
+    '<div class="fgrid" style="grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:10px">'+
+    '<div class="field"><label>source.type</label><select id="at-src-type-'+idx+'">'+locTypes+'</select></div>'+
+    '<div class="field"><label>source.value <span class="req">*</span></label>'+
+      '<select id="at-src-wallet-'+idx+'" onchange="atWalletPick(\'src\','+idx+')" style="margin-bottom:4px;background:#0b1120;border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12.5px;padding:7px 9px;width:100%">'+walletOpts+'</select>'+
+      '<input id="at-src-val-'+idx+'" type="text" placeholder="wallet_id / address / cp_id…" style="background:#0b1120;border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12.5px;padding:7px 9px;width:100%"></div>'+
+    '<div class="field"><label>target.type</label><select id="at-tgt-type-'+idx+'"><option>COUNTERPARTY_ID</option><option>WALLET</option><option>ADDRESS</option><option>PAYMENT_METHOD</option><option>OTHER</option><option>MULTIPLE_ADDRESSES</option></select></div>'+
+    '<div class="field"><label>target.value <span class="req">*</span></label>'+
+      '<select id="at-tgt-wallet-'+idx+'" onchange="atWalletPick(\'tgt\','+idx+')" style="margin-bottom:4px;background:#0b1120;border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12.5px;padding:7px 9px;width:100%">'+walletOpts+'</select>'+
+      '<input id="at-tgt-val-'+idx+'" type="text" placeholder="CB12345678 / wallet_id / address…" style="background:#0b1120;border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12.5px;padding:7px 9px;width:100%"></div>'+
+    '<div class="field"><label>currency <span class="req">*</span></label><select id="at-cur-'+idx+'"><option>BTC</option><option>ETH</option><option>SOL</option><option>USD</option><option>USDC</option><option>PYUSD</option></select></div>'+
+    '<div class="field"><label>amount <span class="req">*</span></label><input id="at-amt-'+idx+'" type="number" step="any" placeholder="e.g. 1.5"></div>'+
+    '</div>';
+  container.appendChild(div);
+}
+
+function atWalletPick(side,idx){
+  var sel=document.getElementById('at-'+side+'-wallet-'+idx);
+  var inp=document.getElementById('at-'+side+'-val-'+idx);
+  if(sel&&inp&&sel.value){inp.value=sel.value;}
+}
+
+function atRemoveLeg(idx){
+  var el=document.getElementById('at-leg-'+idx);
+  if(el)el.remove();
+  AT_LEGS[idx]=null;
+}
+
+function opCreateAdvancedTransfer(pid){
+  var ep='POST /v1/portfolios/'+pid+'/advanced_transfers';
+  var type=val('at-type');
+  var refId=val('at-ref');
+  var sdate=val('at-sdate');
+  var tdate=val('at-tdate');
+  var stime=val('at-stime')||'0930';
+  var req={advanced_transfer:{type:type,blind_match_metadata:{reference_id:refId,settlement_date:sdate}}};
+  if(tdate)req.advanced_transfer.blind_match_metadata.trade_date=tdate;
+  req.advanced_transfer.blind_match_metadata.settlement_time=stime;
+  if(!requiresPerm('TRANSFER')){showResp(scopeError(ep,req,'TRANSFER'));return;}
+  if(!refId){showResp(apiError(ep,req,'missing_required_field','blind_match_metadata.reference_id is required'));return;}
+  if(!sdate||!/^\d{8}$/.test(sdate)){showResp(apiError(ep,req,'invalid_settlement_date','blind_match_metadata.settlement_date must be in YYYYMMDD format (e.g. 20260724)'));return;}
+  // collect legs
+  var legs=[];
+  var legEls=document.querySelectorAll('[id^="at-leg-"]');
+  for(var i=0;i<legEls.length;i++){
+    var legIdx=parseInt(legEls[i].id.replace('at-leg-',''));
+    if(AT_LEGS[legIdx]===null)continue;
+    var srcType=document.getElementById('at-src-type-'+legIdx);
+    var srcVal=document.getElementById('at-src-val-'+legIdx);
+    var tgtType=document.getElementById('at-tgt-type-'+legIdx);
+    var tgtVal=document.getElementById('at-tgt-val-'+legIdx);
+    var cur=document.getElementById('at-cur-'+legIdx);
+    var amtEl=document.getElementById('at-amt-'+legIdx);
+    if(!srcType||!tgtType||!cur||!amtEl)continue;
+    if(!srcVal||!srcVal.value.trim()){showResp(apiError(ep,req,'missing_leg_source','Leg '+(legs.length+1)+': source value is required'));return;}
+    if(!tgtVal||!tgtVal.value.trim()){showResp(apiError(ep,req,'missing_leg_target','Leg '+(legs.length+1)+': target value is required'));return;}
+    var a=parseFloat(amtEl.value);
+    if(isNaN(a)||a<=0){showResp(apiError(ep,req,'missing_leg_amount','Leg '+(legs.length+1)+': amount must be a positive number'));return;}
+    legs.push({id:uuid(),source:{type:srcType.value,value:srcVal.value.trim()},target:{type:tgtType.value,value:tgtVal.value.trim()},currency:cur.value,amount:String(a)});
+  }
+  if(!legs.length){showResp(apiError(ep,req,'missing_fund_movements','At least one fund_movement leg is required'));return;}
+  req.advanced_transfer.fund_movements=legs;
+  // validate WALLET source balances
+  var errs=[];
+  legs.forEach(function(leg,i){
+    if(leg.source.type==='WALLET'){
+      var sw=getWallet(leg.source.value);
+      if(!sw){errs.push('Leg '+(i+1)+': source wallet not found');return;}
+      if(sw.symbol!==leg.currency){errs.push('Leg '+(i+1)+': source wallet holds '+sw.symbol+' but currency is '+leg.currency);return;}
+      if(available(sw)<parseFloat(leg.amount))errs.push('Leg '+(i+1)+': insufficient '+leg.currency+' — available '+fmt(available(sw))+', requested '+fmt(parseFloat(leg.amount)));
+    }
+  });
+  if(errs.length){showResp(apiError(ep,req,'constraint_violation',errs.join('; '),'422 Unprocessable Entity'));return;}
+  // create
+  var atId=uuid();
+  var at={id:atId,portfolio_id:pid,type:type,state:'ADVANCED_TRANSFER_STATE_CREATED',
+    fund_movements:legs,blind_match_metadata:{reference_id:refId,settlement_date:sdate,trade_date:tdate||null,settlement_time:stime},created_at:now()};
+  STATE.advancedTransfers.unshift(at);
+  // hold WALLET sources
+  legs.forEach(function(leg){
+    if(leg.source.type==='WALLET'){var sw=getWallet(leg.source.value);if(sw){var a2=parseFloat(leg.amount);
+      sw.balance.holds=+(sw.balance.holds+a2).toFixed(8);sw.balance.withdrawable_amount=+(sw.balance.withdrawable_amount-a2).toFixed(8);}}
+  });
+  var act=addActivity(pid,'ADVANCED_TRANSFER',
+    'Blind Match '+legs.length+'-leg settlement — ref: '+refId+' / settle: '+sdate,'PENDING',{kind:'ADVANCED_TRANSFER',id:atId});
+  at.activity_id=act.activity_id;
+  trackOp('create_advanced_transfer');
+  showResp(respHTML(ep,req,true,'201 Created — pending consensus approval',
+    {advanced_transfer:{id:atId,type:type,state:'ADVANCED_TRANSFER_STATE_CREATED',fund_movements:legs,
+      blind_match_metadata:at.blind_match_metadata,activity_id:act.activity_id,approval_url:act.ui_url,created_at:at.created_at}},
+    'Transfer in CREATED state. Funds held on source wallets. Approve the Activity to advance to PROCESSING → DONE.'));
+  renderAll();
+}
+
 /* ---------- deposit addresses ---------- */
 function viewDeposits(w){
   var h='<div class="card"><h3>Get Deposit Instructions</h3>'+
   '<div class="endpoint"><span class="verb">GET</span>/v1/portfolios/'+w.portfolio_id+'/wallets/'+w.id+'/deposit_instructions</div>'+
   '<div class="fgrid"><div class="field"><label>deposit_type</label><select id="da-type"><option value="static">static — permanent per wallet</option><option value="unique">unique — generated per request</option></select></div></div>'+
-  '<div class="btn-row"><button class="btn" onclick="opGetDeposit(\''+w.id+'\')">Send Request</button></div></div>';
+  '<div class="btn-row"><button class="btn" onclick="opGetDeposit(\''+w.id+'\')">Send Request</button></div></div>'+
+  (w.symbol==='USD'?'<p class="tip" style="margin-top:-8px;margin-bottom:14px">For USD wallets, both deposit types return the same bank wire instructions. The static address concept does not apply to fiat.</p>':'');
+  if(w.symbol==='USD'){
+    h+='<div class="card"><h3>Simulate Incoming Wire</h3>'+
+    '<p style="font-size:12.5px;color:var(--muted);margin-bottom:14px">In production, Coinbase Prime automatically credits your USD wallet when a validated wire arrives matching your portfolio reference. Use this to simulate that event.</p>'+
+    '<div class="fgrid">'+
+    fld('wire-amt','Wire Amount (USD)','number','','e.g. 250000',true)+
+    fld('wire-ref','Sender Reference','text','','e.g. BANK-TXN-123456',false)+
+    '<div class="field"><label>Wire Type</label><select id="wire-type"><option value="FEDWIRE">FedWire (domestic)</option><option value="SWIFT">SWIFT (international)</option></select></div>'+
+    '</div><div class="btn-row"><button class="btn green" onclick="opSimulateWire(\''+w.id+'\')">Simulate Wire Receipt</button></div></div>';
+  }
   var das=STATE.depositAddresses[w.id]||[];
   h+='<div class="card"><h3>Provisioned Addresses</h3>';
-  if(!das.length)h+='<div class="empty">'+(w.symbol==='USD'?'Fiat wallets use bank wire details — no blockchain addresses.':'No addresses yet.')+'</div>';
+  if(!das.length)h+='<div class="empty">'+(w.symbol==='USD'?'USD wallets receive deposits via bank wire (FedWire or SWIFT). Click "Send Request" above to get wire instructions.':'No addresses yet.')+'</div>';
   else{
     h+='<table class="list"><tr><th>address</th><th>network</th><th>type</th><th></th></tr>';
     das.forEach(function(d){h+='<tr><td class="mono" style="font-size:10.5px;word-break:break-all">'+d.address+'</td><td class="mono" style="font-size:11px">'+d.network_id+'</td><td><span class="st '+(d.type==='static'?'st-ACTIVE':'st-OPEN')+'">'+d.type+'</span></td>'+
@@ -776,6 +1173,169 @@ function viewActivitiesTab(pid){
   return h;
 }
 
+/* ---------- reconciliation tab ---------- */
+function buildLedger(pid){
+  var rows=[];
+  // Orders
+  STATE.orders.filter(function(o){return o.portfolio_id===pid;}).forEach(function(o){
+    rows.push({id:o.id,type:'ORDER',desc:o.side+' '+o.base_quantity+' '+o.product_id+' @ '+(o.average_filled_price||o.limit_price||'market'),
+      amount:o.filled_value||o.base_quantity,currency:o.product_id.split('-')[1],status:o.status,created_at:o.created_at});
+  });
+  // Withdrawals
+  STATE.withdrawals.filter(function(w){return w.portfolio_id===pid;}).forEach(function(x){
+    rows.push({id:x.transaction_id,type:'WITHDRAWAL',desc:'Withdrawal '+x.amount+' '+x.symbol+' → '+x.destination_type.replace('DESTINATION_',''),
+      amount:x.amount,currency:x.symbol,status:x.status,created_at:x.created_at});
+  });
+  // Conversions
+  STATE.conversions.filter(function(c){return c.portfolio_id===pid||STATE.wallets.some(function(w){return w.id===c.source&&w.portfolio_id===pid;});}).forEach(function(c){
+    rows.push({id:c.transaction_id,type:'CONVERSION',desc:'Convert '+c.amount+' '+c.source_symbol+' → '+c.destination_symbol,
+      amount:c.amount,currency:c.source_symbol,status:'COMPLETED',created_at:c.created_at||now()});
+  });
+  // Staking
+  STATE.stakingPositions.filter(function(p){return p.portfolio_id===pid;}).forEach(function(p){
+    rows.push({id:p.transaction_id,type:'STAKING',desc:'Stake '+p.amount+' '+p.asset,
+      amount:p.amount,currency:p.asset,status:p.status,created_at:p.created_at||now()});
+  });
+  // Advanced transfers
+  STATE.advancedTransfers.filter(function(a){return a.portfolio_id===pid;}).forEach(function(a){
+    rows.push({id:a.id,type:'ADVANCED_TRANSFER',
+      desc:'Blind Match '+a.fund_movements.length+' legs — '+a.blind_match_metadata.reference_id,
+      amount:a.fund_movements.reduce(function(s,l){return s+parseFloat(l.amount);},0),
+      currency:a.fund_movements[0]?a.fund_movements[0].currency:'USD',
+      status:a.state.replace('ADVANCED_TRANSFER_STATE_',''),created_at:a.created_at});
+  });
+  // Wire receipts from activities
+  STATE.activities.filter(function(a){return a.portfolio_id===pid&&a.type==='TRANSACTION'&&a.description.indexOf('wire received')>=0;}).forEach(function(a){
+    rows.push({id:a.activity_id,type:'WIRE_RECEIPT',desc:a.description,
+      amount:parseFloat((a.description.match(/\$([\d,]+)/)||['0','0'])[1].replace(/,/g,'')),
+      currency:'USD',status:'COMPLETED',created_at:a.created_at});
+  });
+  // Sort newest first
+  rows.sort(function(a,b){return a.created_at<b.created_at?1:-1;});
+  return rows;
+}
+
+function opGetTransactions(pid){
+  var ep='GET /v1/portfolios/'+pid+'/transactions';
+  var type=val('recon-type');
+  var status=val('recon-status');
+  var req={portfolio_id:pid};
+  if(type&&type!=='ALL')req.transaction_type=type;
+  if(status&&status!=='ALL')req.status=status;
+  var txns=buildLedger(pid);
+  if(type&&type!=='ALL')txns=txns.filter(function(t){return t.type===type;});
+  if(status&&status!=='ALL')txns=txns.filter(function(t){return t.status===status;});
+  var res={transactions:txns.map(function(t){
+    return {transaction_id:t.id,type:t.type,status:t.status,
+      amount:String(t.amount||0),currency:t.currency||'USD',
+      description:t.desc,created_at:t.created_at,portfolio_id:pid};
+  }),count:txns.length,portfolio_id:pid};
+  showResp(respHTML(ep,req,true,'200 OK',res));
+  trackOp('get_transactions');
+}
+
+function exportReconCSV(pid){
+  var rows=buildLedger(pid);
+  var lines=['Transaction ID,Type,Description,Amount,Currency,Status,Created At'];
+  rows.forEach(function(r){
+    lines.push([r.id,r.type,'"'+r.desc.replace(/"/g,'""')+'"',r.amount,r.currency,r.status,r.created_at].join(','));
+  });
+  var blob=new Blob([lines.join('\n')],{type:'text/csv'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='coinbase-prime-recon-'+pid.slice(0,8)+'.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  trackOp('export_csv');
+}
+
+function exportReconJSON(pid){
+  var rows=buildLedger(pid);
+  var blob=new Blob([JSON.stringify({portfolio_id:pid,exported_at:now(),transactions:rows},null,2)],{type:'application/json'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='coinbase-prime-recon-'+pid.slice(0,8)+'.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  trackOp('export_json');
+}
+
+function viewReconciliation(p){
+  var pid=p.id;
+  var reconType=UI.reconType||'';
+  var reconStatus=UI.reconStatus||'';
+  var h='';
+
+  // Section A: API endpoint card
+  h+='<div class="card"><h3>Transaction History API</h3>'+
+  '<div class="endpoint"><span class="verb">GET</span>/v1/portfolios/'+pid+'/transactions</div>'+
+  '<div class="fgrid" style="grid-template-columns:200px 200px;margin-bottom:12px">'+
+  '<div class="field"><label>Transaction Type</label><select id="recon-type" onchange="UI.reconType=this.value;renderMain()">'+
+  ['ALL','ORDER','WITHDRAWAL','CONVERSION','STAKING','ADVANCED_TRANSFER','WIRE_RECEIPT'].map(function(t){return '<option'+(reconType===t?' selected':'')+'>'+t+'</option>';}).join('')+
+  '</select></div>'+
+  '<div class="field"><label>Status</label><select id="recon-status" onchange="UI.reconStatus=this.value;renderMain()">'+
+  ['ALL','COMPLETED','PENDING','FAILED','CANCELLED'].map(function(s){return '<option'+(reconStatus===s?' selected':'')+'>'+s+'</option>';}).join('')+
+  '</select></div></div>'+
+  '<div class="btn-row" style="margin-top:0"><button class="btn" onclick="opGetTransactions(\''+pid+'\')">Send Request</button></div>'+
+  '</div>';
+
+  // Section B: Unified ledger table
+  var ledger=buildLedger(pid);
+  if(reconType&&reconType!=='ALL')ledger=ledger.filter(function(t){return t.type===reconType;});
+  if(reconStatus&&reconStatus!=='ALL')ledger=ledger.filter(function(t){return t.status===reconStatus;});
+
+  h+='<div class="card"><h3>Unified Ledger</h3>';
+  if(!ledger.length){
+    h+='<div class="empty">No transactions in this session yet. Use the other tabs to create orders, withdrawals, and transfers.</div>';
+  }else{
+    h+='<table class="list"><tr><th>#</th><th>Timestamp</th><th>Type</th><th>Description</th><th>Amount</th><th>Status</th><th>Tx ID</th></tr>';
+    ledger.forEach(function(t,i){
+      var ts=t.created_at?new Date(t.created_at).toLocaleString():'—';
+      var typeBadge='<span class="type-'+t.type+'" style="font-size:10px;font-weight:700;letter-spacing:.04em">'+t.type+'</span>';
+      var amt=(t.amount!==undefined&&t.amount!==null)?fmt(t.amount)+' '+esc(t.currency||''):'—';
+      var stBadge='<span class="st st-'+esc(t.status||'')+'">'+esc(t.status||'')+'</span>';
+      var txId=t.id?('<span class="mono" style="font-size:10.5px" title="'+esc(t.id)+'">'+esc(t.id.slice(0,12))+'…</span>'):'—';
+      h+='<tr>'+
+        '<td style="color:var(--faint)">'+(i+1)+'</td>'+
+        '<td style="font-size:11px;white-space:nowrap">'+esc(ts)+'</td>'+
+        '<td>'+typeBadge+'</td>'+
+        '<td style="font-size:11.5px">'+esc(t.desc||'')+'</td>'+
+        '<td class="mono" style="font-size:11.5px">'+amt+'</td>'+
+        '<td>'+stBadge+'</td>'+
+        '<td>'+txId+'</td>'+
+      '</tr>';
+    });
+    h+='</table>';
+  }
+  h+='<div class="btn-row">'+
+    '<button class="btn secondary" onclick="exportReconCSV(\''+pid+'\')">&#11015; Export CSV</button>'+
+    '<button class="btn secondary" onclick="exportReconJSON(\''+pid+'\')">&#11015; Export JSON</button>'+
+  '</div></div>';
+
+  // Section C: Portfolio snapshot
+  var ws=walletsOf(pid);
+  var totalFiat=ws.reduce(function(s,w){return s+(w.balance.fiat_amount||0);},0);
+  h+='<div class="card"><h3>Portfolio Snapshot</h3>'+
+  '<table class="list"><tr><th>Wallet</th><th>Symbol</th><th>Type</th><th>Amount</th><th>Holds</th><th>Withdrawable</th><th>Fiat (USD)</th></tr>';
+  ws.forEach(function(w){
+    h+='<tr>'+
+      '<td>'+esc(w.name)+'</td>'+
+      '<td class="mono">'+w.symbol+'</td>'+
+      '<td><span class="wbadge wb-'+w.type+'">'+w.type+'</span></td>'+
+      '<td class="mono">'+fmt(w.balance.amount)+'</td>'+
+      '<td class="mono">'+fmt(w.balance.holds)+'</td>'+
+      '<td class="mono">'+fmt(w.balance.withdrawable_amount)+'</td>'+
+      '<td class="mono">$'+fmt((w.balance.fiat_amount||0).toFixed(2))+'</td>'+
+    '</tr>';
+  });
+  h+='</table>'+
+  '<div style="text-align:right;margin-top:10px;font-size:13px;font-weight:700;color:#f1f5f9">Total Portfolio Value: <span class="mono" style="color:#4ade80">$'+fmt(totalFiat.toFixed(2))+'</span></div>'+
+  '<div style="font-size:10px;color:var(--faint);margin-top:6px">As of '+esc(now())+'</div>'+
+  '</div>';
+
+  return h;
+}
+
 /* ============================== activity log (right) ============================== */
 function renderLog(){
   var el=document.getElementById('log');
@@ -800,11 +1360,13 @@ function renderAll(){renderTree();renderMain();renderLog();}
 function opCreatePortfolio(){
   var ep='POST /v1/portfolios';
   var req={entity_id:STATE.entity.entity_id,name:val('cp-name'),portfolio_type:val('cp-type')};
+  if(!requiresPerm('MANAGE')){showResp(scopeError(ep,req,'MANAGE'));return;}
   if(!req.name){showResp(apiError(ep,req,'missing_required_field','name is required'));return;}
   var p={id:uuid(),name:req.name,portfolio_type:req.portfolio_type,entity_id:STATE.entity.entity_id,
     organization_id:STATE.org.organization_id,entity_name:STATE.entity.entity_name,status:'ACTIVE',created_at:now()};
   STATE.portfolios.push(p);
   UI.open['p:'+p.id]=true;
+  trackOp('create_portfolio');
   showResp(respHTML(ep,req,true,'201 Created',{portfolio:{id:p.id,name:p.name,portfolio_type:p.portfolio_type,entity_id:p.entity_id,organization_id:p.organization_id,entity_name:p.entity_name,created_at:p.created_at}}));
   renderTree();
 }
@@ -817,6 +1379,7 @@ function opClosePortfolio(pid){
   var p=getPortfolio(pid);
   var ep='POST /v1/portfolios/'+pid+'/close';
   var req={portfolio_id:pid};
+  if(!requiresPerm('MANAGE')){showResp(scopeError(ep,req,'MANAGE'));return;}
   var ws=walletsOf(pid).filter(function(w){return w.status!=='CLOSED'&&w.status!=='REJECTED';});
   var withBal=ws.filter(function(w){return w.balance.amount>0;})[0];
   if(withBal){showResp(apiError(ep,req,'portfolio_nonzero_balance','Cannot close portfolio: wallet "'+withBal.name+'" holds a non-zero balance ('+fmt(withBal.balance.amount)+' '+withBal.symbol+'). All wallet balances must be zero.','409 Conflict'));return;}
@@ -825,6 +1388,7 @@ function opClosePortfolio(pid){
   if(STATE.activities.filter(function(a){return a.portfolio_id===pid&&a.status==='PENDING';}).length){
     showResp(apiError(ep,req,'portfolio_pending_activities','Cannot close portfolio: pending Activities must be approved or rejected first.','409 Conflict'));return;}
   var a=addActivity(pid,'PORTFOLIO_CLOSURE','Close portfolio "'+p.name+'"','PENDING',{kind:'PORTFOLIO_CLOSURE',id:pid});
+  trackOp('close_portfolio');
   showResp(respHTML(ep,req,true,'200 OK — pending consensus approval',{activity_id:a.activity_id,approval_url:a.ui_url,status:'PENDING'}));
   renderLog();
 }
@@ -836,6 +1400,7 @@ function opCreateWallet(pid){
   var type=val('cw-type'),name=val('cw-name'),sym=val('cw-sym');
   var req={name:name,type:type};
   if(type!=='ONCHAIN')req.symbol=sym;else req.network_family=val('cw-fam');
+  if(!requiresPerm('MANAGE')){showResp(scopeError(ep,req,'MANAGE'));return;}
   if(!name){showResp(apiError(ep,req,'missing_required_field','name is required'));return;}
   if(type==='TRADING'&&p.portfolio_type==='PRIME_CUSTODY'){
     showResp(apiError(ep,req,'wallet_type_portfolio_mismatch','TRADING wallets cannot be created in a PRIME_CUSTODY portfolio'));return;}
@@ -854,6 +1419,7 @@ function opCreateWallet(pid){
     var w=mkWallet(pid,name,osym,'ONCHAIN','ACTIVE');
     STATE.wallets.push(w);
     STATE.depositAddresses[w.id]=[{wallet_id:w.id,address:w.address,network_id:w.network.id,type:'static',created_at:now()}];
+    trackOp('create_wallet');
     showResp(respHTML(ep,req,true,'201 Created'+(viaUI?' (via Prime UI)':''),{wallet:{id:w.id,name:w.name,type:'ONCHAIN',network_family:fam,address:w.address,created_at:w.created_at}}));
     renderTree();return;
   }
@@ -862,6 +1428,7 @@ function opCreateWallet(pid){
     STATE.wallets.push(wv);
     STATE.depositAddresses[wv.id]=[];
     var a=addActivity(pid,'WALLET_CREATION','Create VAULT wallet "'+name+'" ('+sym+')','PENDING',{kind:'VAULT_WALLET',id:wv.id});
+    trackOp('create_wallet');
     showResp(respHTML(ep,req,true,'201 Created — consensus approval required',
       {activity_id:a.activity_id,approval_url:a.ui_url,status:'PENDING_APPROVAL',
        note:'wallet_id is not accessible until the activity is approved in the Prime UI'},
@@ -871,6 +1438,7 @@ function opCreateWallet(pid){
   var wt=mkWallet(pid,name,sym,type,'ACTIVE');
   STATE.wallets.push(wt);
   STATE.depositAddresses[wt.id]=sym==='USD'?[]:[{wallet_id:wt.id,address:fakeAddress(sym),network_id:NETWORKS[sym],type:'static',created_at:now()}];
+  trackOp('create_wallet');
   showResp(respHTML(ep,req,true,'201 Created',{wallet:{id:wt.id,name:wt.name,symbol:wt.symbol,type:wt.type,network:wt.network,created_at:wt.created_at},note:'Deposit instructions auto-generated'}));
   renderTree();
 }
@@ -878,11 +1446,13 @@ function opCloseWallet(wid){
   var w=getWallet(wid);
   var ep='POST /v1/portfolios/'+w.portfolio_id+'/wallets/'+wid+'/close';
   var req={wallet_id:wid};
+  if(!requiresPerm('MANAGE')){showResp(scopeError(ep,req,'MANAGE'));return;}
   if(w.balance.amount>0){
     showResp(apiError(ep,req,'wallet_nonzero_balance','Cannot close wallet: balance is '+fmt(w.balance.amount)+' '+w.symbol+'. Withdraw or transfer all assets first.','409 Conflict'));return;}
   if(STATE.withdrawals.filter(function(x){return x.wallet_id===wid&&x.status==='PENDING';}).length){
     showResp(apiError(ep,req,'wallet_pending_withdrawals','Cannot close wallet: pending withdrawal Activities must be resolved first.','409 Conflict'));return;}
   var a=addActivity(w.portfolio_id,'WALLET_CLOSURE','Close '+w.type+' wallet "'+w.name+'"','PENDING',{kind:'WALLET_CLOSURE',id:wid});
+  trackOp('close_wallet');
   showResp(respHTML(ep,req,true,'200 OK — pending consensus approval',{activity_id:a.activity_id,approval_url:a.ui_url,status:'PENDING'}));
   renderLog();
 }
@@ -913,6 +1483,7 @@ function opCreateOrder(pid){
   if(!isNaN(sp))req.stop_price=String(sp);
   if(st)req.start_time=st;
   if(et)req.expiry_time=et;
+  if(!requiresPerm('TRADE')){showResp(scopeError(ep,req,'TRADE'));return;}
   if(p.portfolio_type!=='PRIME_TRADING'){
     showResp(apiError(ep,req,'portfolio_type_not_tradable','Orders can only be placed against PRIME_TRADING portfolios. This portfolio is '+p.portfolio_type+'.'));return;}
   if(!coid){showResp(apiError(ep,req,'missing_required_field','client_order_id is required'));return;}
@@ -958,6 +1529,7 @@ function opCreateOrder(pid){
     created_at:now(),hold_wallet:holdWallet.id,hold_amt:holdAmt,fill_price:price};
   STATE.orders.unshift(o);
   var noteMsg=type==='MARKET'?'MARKET order is OPEN — it cannot be cancelled. Hold placed on '+holdWallet.symbol+' wallet. Use Fill to simulate execution.':'Order OPEN — '+fmt(holdAmt)+' '+holdWallet.symbol+' moved to holds.';
+  trackOp('create_order');
   UI.resp[respKey()]=respHTML(ep,req,true,'201 Created',orderResponse(o),noteMsg);
   renderMain();
 }
@@ -996,6 +1568,7 @@ function opFillOrder(oid){
   o.average_filled_price=price;o.commission=commission;o.exchange_fee=+(gross*0.0002).toFixed(8);
   o.net_average_filled_price=+(o.side==='BUY'?price*(1+COMMISSION_RATE):price*(1-COMMISSION_RATE)).toFixed(4);
   addActivity(pid,'TRANSACTION','Order FILLED: '+o.side+' '+fmt(qty)+' '+o.product_id+' @ '+fmt(price)+' (commission '+fmt(commission)+' '+quote+')','COMPLETED',{kind:'ORDER',id:o.id});
+  trackOp('fill_order');
   UI.resp[respKey()]=respHTML('GET /v1/portfolios/'+pid+'/orders/'+o.id,{order_id:o.id},true,'200 OK — order filled',orderResponse(o));
   renderAll();
 }
@@ -1006,6 +1579,7 @@ function opCancelOrder(oid){
   hw.balance.holds=+(hw.balance.holds-o.hold_amt).toFixed(8);
   hw.balance.withdrawable_amount=+(hw.balance.withdrawable_amount+o.hold_amt).toFixed(8);
   o.status='CANCELLED';
+  trackOp('cancel_order');
   UI.resp[respKey()]=respHTML('POST /v1/portfolios/'+o.portfolio_id+'/orders/'+o.id+'/cancel',{order_id:o.id},true,'200 OK — cancelled, hold released',orderResponse(o));
   renderAll();
 }
@@ -1020,6 +1594,7 @@ function opCreateWithdrawal(wid){
   if(dest==='DESTINATION_PAYMENT_METHOD')req.payment_method={payment_method_id:val('wd-pm')};
   if(dest==='DESTINATION_WALLET')req.destination_wallet={wallet_id:val('wd-wallet')};
   if(dest==='DESTINATION_COUNTERPARTY')req.counterparty={counterparty_id:val('wd-cp')};
+  if(!requiresPerm('TRANSFER')){showResp(scopeError(ep,req,'TRANSFER'));return;}
   if(isNaN(amt)||amt<=0){showResp(apiError(ep,req,'missing_required_field','amount must be a positive number'));return;}
   if(!idem){showResp(apiError(ep,req,'missing_required_field','idempotency_key is required'));return;}
   if(STATE.idem[idem]){
@@ -1053,6 +1628,7 @@ function opCreateWithdrawal(wid){
   var res={activity_id:a.activity_id,approval_url:a.ui_url,symbol:w.symbol,amount:String(amt),fee:String(fee),
     destination_type:dest,source_type:'SOURCE_WALLET',transaction_id:txid,status:'PENDING_APPROVAL'};
   STATE.idem[idem]=res;
+  trackOp('create_withdrawal');
   UI.resp[respKey()]=respHTML(ep,req,true,'201 Created — pending consensus approval',res,
     'Amount moved to holds; withdrawable_amount reduced. Approve the Activity in the log to execute.');
   renderAll();
@@ -1085,6 +1661,7 @@ function opCreateConversion(wid){
   STATE.conversions.unshift({transaction_id:txid,source:wid,destination:dwid,source_symbol:w.symbol,destination_symbol:dst,amount:amt,activity_id:a.activity_id});
   var res={activity_id:a.activity_id,source:wid,destination:dwid,source_symbol:w.symbol,destination_symbol:dst,amount:String(amt),transaction_id:txid,status:'COMPLETED'};
   STATE.idem[idem]=res;
+  trackOp('create_conversion');
   UI.resp[respKey()]=respHTML(ep,req,true,'201 Created — settled 1:1 internally',res);
   renderAll();
 }
@@ -1106,6 +1683,7 @@ function opCreateStake(wid){
   STATE.stakingPositions.unshift({transaction_id:txid,activity_id:a.activity_id,wallet_id:wid,portfolio_id:w.portfolio_id,amount:amt,asset:w.symbol,status:'PENDING'});
   w.balance.holds=+(w.balance.holds+amt).toFixed(8);
   w.balance.withdrawable_amount=+(w.balance.withdrawable_amount-amt).toFixed(8);
+  trackOp('create_stake');
   UI.resp[respKey()]=respHTML(ep,req,true,'201 Created — pending approval',{activity_id:a.activity_id,transaction_id:txid,approval_url:a.ui_url,status:'PENDING'},
     'Approve the Activity, then use "Advance" on the position: PENDING → BONDING → ACTIVE.');
   renderAll();
@@ -1126,6 +1704,7 @@ function opCreateUnstake(wid){
     if(amt>p.amount){showResp(apiError(ep,req,'unstake_exceeds_position','Cannot unstake '+fmt(amt)+' — position holds '+fmt(p.amount)+' ETH'));return;}
   }
   var a=addActivity(w.portfolio_id,'STAKING','Unstake '+fmt(amt)+' '+w.symbol,'PENDING',{kind:'UNSTAKE',id:p.transaction_id,amount:amt});
+  trackOp('create_unstake');
   UI.resp[respKey()]=respHTML(ep,req,true,'201 Created — pending approval',{activity_id:a.activity_id,transaction_id:p.transaction_id,approval_url:a.ui_url,status:'PENDING'},
     'Approve the Activity to begin UNBONDING, then "Advance" to COMPLETED to release funds.');
   renderAll();
@@ -1138,7 +1717,38 @@ function opGetDeposit(wid){
   var type=val('da-type');
   var req={wallet_id:wid,deposit_type:type};
   if(w.symbol==='USD'){
-    showResp(apiError(ep,req,'fiat_no_crypto_address','Fiat wallets do not have blockchain deposit addresses. Fiat deposits are handled via bank wire details.'));return;}
+    var pid=w.portfolio_id;
+    var memo='FBO: '+STATE.org.name+' / REF-'+pid.slice(0,8).toUpperCase();
+    var res={deposit_instructions:{
+      type:'wire',
+      deposit_type:type,
+      fedwire:{
+        aba_routing_number:'021000021',
+        beneficiary_bank:'JP Morgan Chase Bank, N.A.',
+        beneficiary_bank_address:'270 Park Avenue, New York, NY 10017, USA',
+        beneficiary_name:'Coinbase Prime LLC',
+        beneficiary_account:'XXXXXXX4521',
+        memo_reference:memo,
+        note:'Include memo/reference exactly as shown — it routes the wire to your portfolio'
+      },
+      swift:{
+        swift_bic:'CHASUS33XXX',
+        beneficiary_bank:'JP Morgan Chase Bank, N.A.',
+        beneficiary_bank_address:'270 Park Avenue, New York, NY 10017, USA',
+        beneficiary_name:'Coinbase Prime LLC',
+        beneficiary_account:'XXXXXXX4521',
+        memo_reference:memo,
+        note:'For international wires. Use SWIFT BIC in place of ABA routing number'
+      },
+      processing_times:{
+        fedwire:'Same-day if received before 5:00 PM ET on a business day',
+        swift:'1–2 business days depending on correspondent banking chain'
+      },
+      important:'Wires received without the correct memo_reference may be delayed or returned'
+    }};
+    UI.resp[respKey()]=respHTML(ep,req,true,'200 OK',res,'USD wallets receive deposits via bank wire. Use FedWire for domestic (US) transfers, SWIFT for international. Always include the memo_reference exactly as shown.');
+    renderMain();return;
+  }
   var list=STATE.depositAddresses[wid]||(STATE.depositAddresses[wid]=[]);
   var d;
   if(type==='static'){
@@ -1148,14 +1758,390 @@ function opGetDeposit(wid){
     d={wallet_id:wid,address:fakeAddress(w.symbol),network_id:NETWORKS[w.symbol],type:'unique',created_at:now()};
     list.push(d);
   }
+  trackOp('get_deposit');
   UI.resp[respKey()]=respHTML(ep,req,true,'200 OK',{deposit_instructions:{address:d.address,network_id:d.network_id,type:d.type,account_identifier:null},
     note:type==='static'?'Static address — same address always returned for this wallet':'Unique address generated for per-sender tracking; do not reuse'});
   renderMain();
 }
 
+function opSimulateWire(wid){
+  var w=getWallet(wid);
+  var ep='[INTERNAL] Wire receipt simulation';
+  var amt=num('wire-amt');
+  var ref=val('wire-ref')||'WIRE-'+randHex(8).toUpperCase();
+  var wtype=val('wire-type');
+  var req={simulation:'incoming_wire',wire_type:wtype,amount:isNaN(amt)?'':String(amt),sender_reference:ref,destination_wallet_id:wid};
+  if(!requiresPerm('TRANSFER')){showResp(scopeError(ep,req,'TRANSFER'));return;}
+  if(isNaN(amt)||amt<=0){showResp(apiError(ep,req,'missing_required_field','Wire amount must be a positive number'));return;}
+  w.balance.amount=+(w.balance.amount+amt).toFixed(2);
+  w.balance.withdrawable_amount=+(w.balance.withdrawable_amount+amt).toFixed(2);
+  recalcFiat(w);
+  var txid=uuid();
+  addActivity(w.portfolio_id,'TRANSACTION',wtype+' wire received: $'+fmt(amt)+' USD (ref: '+ref+')','COMPLETED',{kind:'WIRE_RECEIPT',id:txid});
+  showResp(respHTML(ep,req,true,'200 OK — wire credited',{
+    event:'wire_receipt',wire_type:wtype,amount:String(amt),currency:'USD',
+    sender_reference:ref,destination_wallet_id:wid,transaction_id:txid,
+    new_balance:String(w.balance.amount),status:'COMPLETED',credited_at:now()
+  },'Wire receipt simulated. USD balance has been credited to the wallet.'));
+  trackOp('simulate_wire');
+  renderAll();
+}
+
+/* ============================== entitlement: users ============================== */
+function viewEntityUsers(){
+  var h='<div class="card"><h3>Team Members — GET /v1/entities/{entity_id}/users</h3>';
+  h+='<table class="list"><tr><th>Name</th><th>Email</th><th>Role</th><th>Level</th><th>Portfolios</th><th>Status</th><th></th></tr>';
+  STATE.users.forEach(function(u){
+    var portfolioLabel=u.access_level==='ENTITY'?'All (auto)':(u.portfolio_ids||[]).length+' assigned';
+    var canRemove=!(u.role==='ADMINISTRATOR'&&STATE.users.filter(function(x){return x.role==='ADMINISTRATOR';}).length<=1);
+    h+='<tr>'+
+      '<td>'+esc(u.name)+'</td>'+
+      '<td style="font-size:11px;color:var(--muted)">'+esc(u.email)+'</td>'+
+      '<td><span class="role-badge role-'+u.role+'">'+u.role.replace(/_/g,' ')+'</span></td>'+
+      '<td style="font-size:11px">'+u.access_level+'</td>'+
+      '<td style="font-size:11px;color:var(--muted)">'+portfolioLabel+'</td>'+
+      '<td><span class="st st-'+(u.status==='ACTIVE'?'ACTIVE':'CANCELLED')+'">'+u.status+'</span></td>'+
+      '<td>'+(canRemove?'<button class="btn small danger" onclick="opRemoveUser(\''+u.user_id+'\')">Remove</button>':'<button class="btn small danger" disabled title="Cannot remove last Administrator">Remove</button>')+'</td>'+
+    '</tr>';
+  });
+  h+='</table></div>';
+  h+='<div class="card"><h3>Add Team Member</h3>'+
+    '<div class="endpoint"><span class="verb">POST</span>/v1/entities/{entity_id}/users</div>'+
+    '<div class="fgrid">'+
+    fld('au-name','name','text','','Full name',true)+
+    fld('au-email','email','email','','user@company.com',true)+
+    '<div class="field"><label>role <span class="req">*</span></label><select id="au-role">'+
+    ['ADMINISTRATOR','AUTHORIZED_SIGNATORY','FULL_TRADER','INITIATOR','APPROVER','TEAM_MANAGER','VIEWER'].map(function(r){return '<option>'+r+'</option>';}).join('')+
+    '</select></div>'+
+    '<div class="field"><label>access_level <span class="req">*</span></label><select id="au-level"><option>ENTITY</option><option>PORTFOLIO</option></select></div>'+
+    '</div><div class="btn-row"><button class="btn" onclick="opAddUser()">Send Request</button></div></div>';
+  return h;
+}
+function opAddUser(){
+  var ep='POST /v1/entities/'+STATE.entity.entity_id+'/users';
+  var req={entity_id:STATE.entity.entity_id,name:val('au-name'),email:val('au-email'),role:val('au-role'),access_level:val('au-level')};
+  if(!requiresPerm('MANAGE')){showResp(scopeError(ep,req,'MANAGE'));return;}
+  if(!req.name){showResp(apiError(ep,req,'missing_required_field','name is required'));return;}
+  if(!req.email){showResp(apiError(ep,req,'missing_required_field','email is required'));return;}
+  var u={user_id:uuid(),name:req.name,email:req.email,role:req.role,access_level:req.access_level,
+    portfolio_ids:req.access_level==='PORTFOLIO'?STATE.portfolios.map(function(p){return p.id;}):null,
+    status:'ACTIVE',created_at:now()};
+  STATE.users.push(u);
+  addActivity(STATE.portfolios[0]?STATE.portfolios[0].id:null,'USER_MGMT','Team member added: '+req.name+' ('+req.role+', '+req.access_level+'-level)','COMPLETED',{kind:'USER_MGMT',id:u.user_id});
+  showResp(respHTML(ep,req,true,'201 Created',{user:{user_id:u.user_id,name:u.name,email:u.email,role:u.role,access_level:u.access_level,status:u.status,created_at:u.created_at}}));
+  renderAll();
+}
+function opRemoveUser(uid){
+  var ep='DELETE /v1/entities/'+STATE.entity.entity_id+'/users/'+uid;
+  var u=STATE.users.filter(function(x){return x.user_id===uid;})[0];
+  if(!u)return;
+  if(u.role==='ADMINISTRATOR'&&STATE.users.filter(function(x){return x.role==='ADMINISTRATOR';}).length<=1){
+    showResp(apiError(ep,{user_id:uid},'last_administrator','Cannot remove the last Administrator from the entity'));return;}
+  STATE.users=STATE.users.filter(function(x){return x.user_id!==uid;});
+  addActivity(STATE.portfolios[0]?STATE.portfolios[0].id:null,'USER_MGMT','Team member removed: '+u.name+' ('+u.role+')','COMPLETED',{kind:'USER_MGMT',id:uid});
+  showResp(respHTML(ep,{user_id:uid},true,'200 OK',{user_id:uid,status:'REMOVED'}));
+  renderAll();
+}
+
+/* ============================== entitlement: api keys ============================== */
+function viewEntityApiKeys(){
+  var h='<div class="card"><h3>API Keys — GET /v1/entities/{entity_id}/api_keys</h3>';
+  h+='<table class="list"><tr><th>Nickname</th><th>Scope</th><th>Permissions</th><th>IP Allowlist</th><th>Active</th><th></th></tr>';
+  STATE.apiKeys.forEach(function(k){
+    var isActive=k.api_key_id===STATE.activeApiKeyId;
+    h+='<tr>'+
+      '<td>'+esc(k.nickname)+'</td>'+
+      '<td style="font-size:11px">'+k.scope_level+'</td>'+
+      '<td>'+k.permissions.map(function(p){return '<span class="perm-badge perm-'+p+'">'+p+'</span>';}).join('')+'</td>'+
+      '<td style="font-size:10px;color:var(--faint);font-family:ui-monospace,monospace">'+(k.ip_allowlist.length?k.ip_allowlist.join(', '):'Any IP')+'</td>'+
+      '<td>'+(isActive?'<span class="st st-ACTIVE">ACTIVE</span>':'<button class="btn small secondary" onclick="setActiveKey(\''+k.api_key_id+'\')">Set Active</button>')+'</td>'+
+      '<td>'+(isActive?'<button class="btn small danger" disabled title="Cannot revoke active key">Revoke</button>':'<button class="btn small danger" onclick="opRevokeKey(\''+k.api_key_id+'\')">Revoke</button>')+'</td>'+
+    '</tr>';
+  });
+  h+='</table>'+
+  '<p class="tip" style="margin-top:10px">The Active key determines which operations are permitted. Switch keys to simulate different permission scopes.</p></div>';
+  h+='<div class="card"><h3>Create API Key</h3>'+
+    '<div class="endpoint"><span class="verb">POST</span>/v1/entities/{entity_id}/api_keys</div>'+
+    '<div class="fgrid">'+
+    fld('ck-nick','nickname','text','','e.g. Settlement Bot',true)+
+    '<div class="field"><label>scope_level <span class="req">*</span></label><select id="ck-scope"><option>ENTITY</option><option>PORTFOLIO</option></select></div>'+
+    '<div class="field"><label>permissions <span class="req">*</span></label>'+
+    '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px">'+
+    ['VIEW','TRADE','TRANSFER','MANAGE'].map(function(p){return '<label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text)"><input type="checkbox" id="ck-perm-'+p+'" '+(p==='VIEW'?'checked':'')+'>'+p+'</label>';}).join('')+
+    '</div></div>'+
+    fld('ck-ip','ip_allowlist (CIDR, comma-separated)','text','','e.g. 10.0.0.1/32',false)+
+    '</div><div class="btn-row"><button class="btn" onclick="opCreateApiKey()">Send Request</button></div></div>';
+  return h;
+}
+function setActiveKey(kid){
+  STATE.activeApiKeyId=kid;
+  updateKeyIndicator();
+  renderMain();
+}
+function updateKeyIndicator(){
+  var el=document.getElementById('active-key-indicator');
+  if(!el)return;
+  var k=STATE.apiKeys.filter(function(k){return k.api_key_id===STATE.activeApiKeyId;})[0];
+  if(k)el.innerHTML=esc(k.nickname)+' ['+k.permissions.join('+')+']';
+  else el.innerHTML='None';
+}
+function opRevokeKey(kid){
+  var ep='DELETE /v1/entities/'+STATE.entity.entity_id+'/api_keys/'+kid;
+  var k=STATE.apiKeys.filter(function(x){return x.api_key_id===kid;})[0];
+  if(!k)return;
+  STATE.apiKeys=STATE.apiKeys.filter(function(x){return x.api_key_id!==kid;});
+  if(STATE.activeApiKeyId===kid)STATE.activeApiKeyId=STATE.apiKeys[0]?STATE.apiKeys[0].api_key_id:null;
+  addActivity(STATE.portfolios[0]?STATE.portfolios[0].id:null,'API_KEY','API key revoked: '+k.nickname,'COMPLETED',{kind:'API_KEY',id:kid});
+  showResp(respHTML(ep,{api_key_id:kid},true,'200 OK',{api_key_id:kid,status:'REVOKED'}));
+  updateKeyIndicator();
+  renderAll();
+}
+function opCreateApiKey(){
+  var ep='POST /v1/entities/'+STATE.entity.entity_id+'/api_keys';
+  var nick=val('ck-nick'),scope=val('ck-scope'),ip=val('ck-ip');
+  var perms=['VIEW','TRADE','TRANSFER','MANAGE'].filter(function(p){var el=document.getElementById('ck-perm-'+p);return el&&el.checked;});
+  var req={nickname:nick,scope_level:scope,permissions:perms,ip_allowlist:ip?ip.split(',').map(function(s){return s.trim();}):[]};
+  if(!requiresPerm('MANAGE')){showResp(scopeError(ep,req,'MANAGE'));return;}
+  if(!nick){showResp(apiError(ep,req,'missing_required_field','nickname is required'));return;}
+  if(!perms.length){showResp(apiError(ep,req,'missing_required_field','At least one permission is required'));return;}
+  var k={api_key_id:uuid(),nickname:nick,scope_level:scope,permissions:perms,ip_allowlist:req.ip_allowlist,created_at:now(),expires_at:null,active:true};
+  STATE.apiKeys.push(k);
+  addActivity(STATE.portfolios[0]?STATE.portfolios[0].id:null,'API_KEY','API key created: '+nick+' ['+perms.join('+')+']','COMPLETED',{kind:'API_KEY',id:k.api_key_id});
+  showResp(respHTML(ep,req,true,'201 Created',{api_key:{api_key_id:k.api_key_id,nickname:k.nickname,scope_level:k.scope_level,permissions:k.permissions,ip_allowlist:k.ip_allowlist,created_at:k.created_at}}));
+  renderAll();
+}
+
+/* ============================== entitlement: consensus policy ============================== */
+function viewConsensusPolicy(p){
+  var pol=STATE.consensusPolicies[p.id];
+  if(!pol)return '<div class="empty">No consensus policy found for this portfolio.</div>';
+  var h='<div class="card"><h3>Consensus Policy — GET /v1/portfolios/'+p.id+'/consensus_policy</h3>'+
+  '<div class="fgrid">'+
+  '<div class="field"><label>threshold_type</label><select id="cp-thresh"><option'+(pol.threshold_type==='MAJORITY'?' selected':'')+'>MAJORITY</option><option'+(pol.threshold_type==='ALL'?' selected':'')+'>ALL</option></select><span class="hint">MAJORITY = more than half of approvers; ALL = every approver must consent</span></div>'+
+  fld('cp-window','time_window_hours','number',String(pol.time_window_hours),'',true,'Hours approvers have before request expires')+
+  '</div>'+
+  '<h4 style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin:16px 0 10px">Transfer Approval Tiers</h4>'+
+  '<table class="list"><tr><th>Tier</th><th>Min Amount</th><th>Max Amount</th><th>Approvers Required</th><th>Video Required</th></tr>';
+  pol.transfer_tiers.forEach(function(t,i){
+    h+='<tr>'+
+    '<td>'+esc(t.label)+'</td>'+
+    '<td class="mono">$'+fmt(t.min)+'</td>'+
+    '<td class="mono">'+(t.max===null?'&#8734;':'$'+fmt(t.max))+'</td>'+
+    '<td><input id="cp-tier-approvers-'+i+'" type="number" value="'+t.required_approvers+'" style="width:60px;background:#0b1120;border:1px solid var(--border);border-radius:4px;color:var(--text);padding:4px 6px;font-size:12px"></td>'+
+    '<td><input type="checkbox" id="cp-tier-video-'+i+'" '+(t.video_required?'checked':'')+' style="width:16px;height:16px"></td>'+
+    '</tr>';
+  });
+  h+='</table>'+
+  '<div class="btn-row" style="margin-top:14px"><button class="btn" onclick="opUpdatePolicy(\''+p.id+'\')">Update Policy</button></div></div>';
+  h+='<div class="card"><h3>Transfer Approval Preview</h3>'+
+  '<p style="font-size:12.5px;color:var(--muted);margin-bottom:12px">Enter a hypothetical transfer amount to see which tier applies and what approval is required.</p>'+
+  '<div class="fgrid" style="grid-template-columns:200px"><div class="field"><label>Transfer Amount (USD)</label><input id="cp-preview-amt" type="number" step="any" placeholder="e.g. 500000"></div></div>'+
+  '<div class="btn-row"><button class="btn secondary" onclick="opPreviewApproval(\''+p.id+'\')">Check</button></div>'+
+  '<div id="cp-preview-result" style="margin-top:14px"></div></div>';
+  var approverRoles=['ADMINISTRATOR','AUTHORIZED_SIGNATORY','APPROVER'];
+  var approvers=STATE.users.filter(function(u){
+    return approverRoles.indexOf(u.role)>=0&&(u.access_level==='ENTITY'||(u.portfolio_ids&&u.portfolio_ids.indexOf(p.id)>=0));
+  });
+  h+='<div class="card"><h3>Available Approvers</h3>'+
+  '<table class="list"><tr><th>Name</th><th>Role</th><th>Level</th></tr>';
+  if(!approvers.length)h+='<tr><td colspan="3"><span class="empty">No approvers assigned</span></td></tr>';
+  approvers.forEach(function(u){
+    h+='<tr><td>'+esc(u.name)+'</td><td><span class="role-badge role-'+u.role+'">'+u.role.replace(/_/g,' ')+'</span></td><td style="font-size:11px">'+u.access_level+'</td></tr>';
+  });
+  h+='</table><p class="tip" style="margin-top:8px">'+approvers.length+' approver'+(approvers.length!==1?'s':'')+' available. Policy requires '+pol.threshold_type.toLowerCase()+' consensus.</p></div>';
+  return h;
+}
+function opUpdatePolicy(pid){
+  var ep='PUT /v1/portfolios/'+pid+'/consensus_policy';
+  var pol=STATE.consensusPolicies[pid];
+  pol.threshold_type=document.getElementById('cp-thresh').value;
+  pol.time_window_hours=parseFloat(document.getElementById('cp-window').value)||24;
+  pol.transfer_tiers.forEach(function(t,i){
+    var approversEl=document.getElementById('cp-tier-approvers-'+i);
+    var videoEl=document.getElementById('cp-tier-video-'+i);
+    if(approversEl)t.required_approvers=parseInt(approversEl.value)||0;
+    if(videoEl)t.video_required=videoEl.checked;
+  });
+  pol.updated_at=now();
+  showResp(respHTML(ep,{portfolio_id:pid,threshold_type:pol.threshold_type,time_window_hours:pol.time_window_hours},true,'200 OK',{consensus_policy:pol},'Consensus policy updated successfully.'));
+  renderAll();
+}
+function opPreviewApproval(pid){
+  var amt=parseFloat(document.getElementById('cp-preview-amt').value);
+  var result=document.getElementById('cp-preview-result');
+  if(!result)return;
+  if(isNaN(amt)||amt<0){result.innerHTML='<p class="tip">Enter a valid amount.</p>';return;}
+  var pol=STATE.consensusPolicies[pid];
+  var tier=pol.transfer_tiers.filter(function(t){return amt>=t.min&&(t.max===null||amt<t.max);})[0];
+  if(!tier)tier=pol.transfer_tiers[pol.transfer_tiers.length-1];
+  var color=tier.required_approvers===0?'#22c55e':tier.video_required?'#ef4444':'#f59e0b';
+  result.innerHTML='<div style="background:#0b1120;border:1px solid var(--border);border-left:3px solid '+color+';border-radius:6px;padding:12px">'+
+    '<div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px">Approval Tier: '+esc(tier.label)+'</div>'+
+    '<div style="font-size:13px;color:#f8fafc;margin-bottom:4px">$'+fmt(amt)+' USD</div>'+
+    (tier.required_approvers===0
+      ? '<div style="color:#22c55e;font-size:12.5px">&#10003; Auto-approved &#8212; no consensus required</div>'
+      : '<div style="color:'+color+';font-size:12.5px">Requires '+tier.required_approvers+' approver'+(tier.required_approvers!==1?'s':'')+' ('+pol.threshold_type+')'+(tier.video_required?' + Video Verification by Authorized Signatory':'')+'</div>')+
+    '</div>';
+}
+
+/* ============================== entitlement: scope enforcement ============================== */
+function activeKeyPermissions(){
+  if(!STATE.activeApiKeyId)return ['VIEW','TRADE','TRANSFER','MANAGE'];
+  var k=STATE.apiKeys.filter(function(k){return k.api_key_id===STATE.activeApiKeyId;})[0];
+  return k?k.permissions:['VIEW'];
+}
+function requiresPerm(perm){return activeKeyPermissions().indexOf(perm)>=0;}
+function scopeError(ep,req,perm){
+  var k=STATE.apiKeys.filter(function(k){return k.api_key_id===STATE.activeApiKeyId;})[0];
+  var kname=k?k.nickname:'Unknown';
+  return apiError(ep,req,'insufficient_scope','Active API key "'+kname+'" has permissions ['+activeKeyPermissions().join('+')+'] but this operation requires '+perm+'. Go to Entity &#8594; API Keys to switch to a key with the required permission.','403 Forbidden');
+}
+
+/* ============================== walkthrough guide ============================== */
+var GUIDE_SCENARIOS=[
+  {id:'trading',title:'Trading Lifecycle',description:'Place, fill, and review a market order end-to-end in a PRIME_TRADING portfolio.',steps:[
+    {title:'Select the Trading Portfolio',desc:'In the left sidebar, click \'Acme Trading\' (PRIME_TRADING). This is where orders and withdrawals live.',action:'Click → Acme Trading in the left sidebar',highlight:'#tree'},
+    {title:'View Wallet Balances',desc:'Click the Wallets tab. You\'ll see pre-seeded BTC, ETH, and USD Trading Wallets with balances.',action:'Click the Wallets tab',highlight:null},
+    {title:'Place a Market Order',desc:'Click a wallet, then go to the Orders tab. Set product to BTC-USD, side to SELL, type to MARKET, enter a base_quantity (e.g. 0.5), and click Send Request.',action:'Orders tab → MARKET SELL 0.5 BTC-USD → Send Request',highlight:null},
+    {title:'Fill the Order',desc:'The order is now OPEN. Click the Fill button next to it to simulate execution. The BTC balance will decrease and USD will increase by the proceeds (minus commission).',action:'Click Fill on the OPEN order',highlight:null},
+    {title:'Check Updated Balances',desc:'Go back to the wallet Overview tab. You\'ll see the new amount, the commission deducted, and the updated fiat_amount.',action:'Wallet → Overview tab',highlight:null}
+  ]},
+  {id:'withdrawal',title:'Withdrawal with Travel Rule',description:'Initiate a large withdrawal that triggers the Travel Rule compliance form.',steps:[
+    {title:'Select the USD Trading Wallet',desc:'From the left sidebar, open Acme Trading → USD Trading Wallet. The USD wallet has a $100,000 balance.',action:'Click USD Trading Wallet in the sidebar',highlight:'#tree'},
+    {title:'Open the Withdrawals Tab',desc:'Click the Withdrawals tab on the wallet view.',action:'Click Withdrawals tab',highlight:null},
+    {title:'Set a Large Amount (>1000)',desc:'Enter an amount above 1000 in the amount field — e.g. 5000. The Travel Rule form will appear automatically below the destination fields.',action:'amount → 5000 (Travel Rule panel appears)',highlight:null},
+    {title:'Fill in Travel Rule Data',desc:'Complete the originator and beneficiary fields: name, address, and account number for both parties. These are required for any transfer above 1000 units.',action:'Fill originator + beneficiary name, address, account_number',highlight:null},
+    {title:'Submit & Approve',desc:'Click Send Request. A pending Activity is created. Find it in the right-hand Activity Log and click Approve to execute the withdrawal.',action:'Send Request → Activity Log → Approve',highlight:'#log'}
+  ]},
+  {id:'otc',title:'Blind Match OTC Settlement',description:'Simulate a two-legged OTC settlement between counterparties using Advanced Transfers.',steps:[
+    {title:'Select a Portfolio',desc:'Open Acme Trading from the sidebar. Advanced Transfers are available at the portfolio level.',action:'Click Acme Trading',highlight:'#tree'},
+    {title:'Open Advanced Transfers Tab',desc:'Click the \'Adv. Transfers\' tab. This feature is restricted on real Prime — it represents two-legged OTC settlements between counterparties.',action:'Click Adv. Transfers tab',highlight:null},
+    {title:'Set Blind Match Metadata',desc:'Fill in the reference_id (your OTC trade reference), settlement_date in YYYYMMDD format (e.g. tomorrow\'s date), and optionally trade_date and settlement_time (default 0930 UTC).',action:'reference_id: BM-001 | settlement_date: YYYYMMDD',highlight:null},
+    {title:'Configure Fund Movement Legs',desc:'Two legs are pre-populated. Leg 1: source = your BTC wallet (select from dropdown), target type = COUNTERPARTY_ID, target value = CB12345678, currency = BTC, amount = 1. Leg 2: source type = COUNTERPARTY_ID, source value = CB12345678, target = your USD wallet, currency = USD, amount = 60000.',action:'Leg 1: BTC wallet → CB12345678 | Leg 2: CB12345678 → USD wallet',highlight:null},
+    {title:'Submit & Approve',desc:'Click Send Request. BTC is moved to holds. Open the Activity Log on the right and Approve. The BTC is debited from the source wallet and USD credited to the target wallet — the settlement is DONE.',action:'Send Request → Activity Log → Approve',highlight:'#log'}
+  ]},
+  {id:'staking',title:'ETH Staking Lifecycle',description:'Stake ETH, advance through BONDING to ACTIVE, then unstake and complete the cycle.',steps:[
+    {title:'Select the ETH Trading Wallet',desc:'From the sidebar, open Acme Trading → ETH Trading Wallet. It has 64 ETH.',action:'Click ETH Trading Wallet',highlight:'#tree'},
+    {title:'Open the Staking Tab',desc:'Click the Staking tab on the wallet view.',action:'Click Staking tab',highlight:null},
+    {title:'Initiate a Stake',desc:'Enter an amount of at least 32 ETH (e.g. 32) and click Send Request. ETH is moved to holds. An Activity is created pending approval.',action:'amount: 32 → Send Request',highlight:null},
+    {title:'Approve the Staking Activity',desc:'In the right-hand Activity Log, find the STAKING activity and click Approve. The position advances from PENDING to BONDING.',action:'Activity Log → Approve',highlight:'#log'},
+    {title:'Advance to ACTIVE',desc:'In the Staking Positions table, click \'Advance → ACTIVE\'. This simulates the on-chain bonding completing. ETH moves from holds to bonded_amount.',action:'Staking Positions → Advance → ACTIVE',highlight:null},
+    {title:'Unstake',desc:'Use the Create Unstake form to unstake the position (ETH: min 1 ETH). Approve the resulting Activity, then Advance → COMPLETED to release funds back to withdrawable_amount.',action:'Create Unstake → Approve → Advance → COMPLETED',highlight:null}
+  ]},
+  {id:'vault',title:'VAULT Wallet Lifecycle',description:'Create, activate, use, and close a VAULT wallet in a custody portfolio.',steps:[
+    {title:'Open the Custody Portfolio',desc:'From the sidebar, click Acme Custody (PRIME_CUSTODY). VAULT wallets can only be created in custody portfolios.',action:'Click Acme Custody',highlight:'#tree'},
+    {title:'Create a VAULT Wallet',desc:'Click the Wallets tab, then fill in Create Wallet: name = \'SOL Cold Vault\', type = VAULT, symbol = SOL. Click Send Request. The wallet is created in PENDING state requiring consensus.',action:'Wallets → Create Wallet: VAULT / SOL → Send Request',highlight:null},
+    {title:'Approve the VAULT Creation',desc:'In the Activity Log on the right, find the WALLET_CREATION activity and click Approve. The SOL vault becomes ACTIVE and its wallet_id is now accessible.',action:'Activity Log → Approve',highlight:'#log'},
+    {title:'Get Deposit Instructions',desc:'Open the new vault wallet, go to the Deposit Addresses tab, select \'static\' type and click Send Request to get its permanent deposit address.',action:'Vault wallet → Deposit Addresses → static → Send Request',highlight:null},
+    {title:'Close the VAULT Wallet',desc:'The wallet must have zero balance to close. Go to Overview → Request Closure. This creates a pending Activity. Approve it to complete closure.',action:'Overview → Request Closure → Activity Log → Approve',highlight:null}
+  ]},
+  {id:'wire_deposit',title:'USD Deposit via FedWire / SWIFT',description:'Get bank wire instructions for your USD wallet and simulate receiving a FedWire or SWIFT transfer.',steps:[
+    {title:'Select the USD Trading Wallet',desc:'From the left sidebar, open Acme Trading → USD Trading Wallet. Fiat USD enters Coinbase Prime via bank wire, not blockchain.',action:'Click USD Trading Wallet in the sidebar',highlight:'#tree'},
+    {title:'Open Deposit Addresses Tab',desc:'Click the "Deposit Addresses" tab on the wallet view. For crypto wallets this shows blockchain addresses — for USD it returns bank wire instructions.',action:'Click Deposit Addresses tab',highlight:null},
+    {title:'Get FedWire Instructions',desc:'Select "static" deposit type and click Send Request. The response includes your ABA routing number, beneficiary bank details, and the memo_reference you must include in your wire.',action:'deposit_type: static → Send Request',highlight:null},
+    {title:'Understand the Memo Reference',desc:'The memo_reference (e.g. "FBO: Acme Corp / REF-XXXXXXXX") is critical — it tells Coinbase Prime which portfolio to credit. Wires received without this reference may be delayed or returned.',action:'Note memo_reference in response — copy it exactly for your bank'},
+    {title:'FedWire vs SWIFT',desc:'FedWire: domestic US transfers, same-day if received before 5pm ET. SWIFT: international transfers, 1–2 business days. Both use the same beneficiary account and memo. Switch the deposit_type to see the SWIFT BIC code.',action:'Compare FedWire (ABA: 021000021) vs SWIFT (BIC: CHASUS33XXX)',highlight:null},
+    {title:'Simulate Wire Receipt',desc:'Scroll down to the "Simulate Incoming Wire" card. Enter an amount (e.g. 250000), a sender reference, and select FedWire. Click Simulate Wire Receipt to credit the USD wallet — this mimics Coinbase Prime automatically processing a validated incoming wire.',action:'Wire Amount: 250000 → Simulate Wire Receipt',highlight:null},
+    {title:'Verify Balance Update',desc:'Go to the wallet Overview tab. You\'ll see the USD amount and withdrawable_amount have increased by the wire amount. The Activity Log on the right will show the TRANSACTION event.',action:'Overview tab → confirm new balance | Activity Log → wire receipt event',highlight:'#log'}
+  ]},
+  {id:'recon',title:'Reconciliation & Activity History',description:'Query the transaction history API, review the unified ledger, and export a reconciliation report.',steps:[
+    {title:'Select a Portfolio',desc:'Open Acme Trading from the sidebar. The reconciliation view is available at portfolio level and pulls together all orders, withdrawals, conversions, staking, and wire receipts.',action:'Click Acme Trading',highlight:'#tree'},
+    {title:'Open the Reconciliation Tab',desc:'Click the "Reconciliation" tab. This simulates the GET /v1/portfolios/{id}/transactions endpoint — the primary API for pulling activity history for recon and reporting.',action:'Click Reconciliation tab',highlight:null},
+    {title:'Query Transaction History',desc:'Click "Send Request". The simulated API response shows all transactions as a JSON array — same structure as the real Prime API, with transaction_id, type, amount, currency, status, and timestamps.',action:'Send Request → view JSON response',highlight:null},
+    {title:'Filter by Type',desc:'Use the Transaction Type dropdown to filter: try "WITHDRAWAL" to see only withdrawals, or "ORDER" for trading activity. The API supports these as query parameters (?transaction_type=WITHDRAWAL).',action:'Transaction Type → WITHDRAWAL → Send Request',highlight:null},
+    {title:'Review the Unified Ledger',desc:'Scroll down to the ledger table. Every transaction across the portfolio is listed here: orders, withdrawals, conversions, staking positions, wire receipts, and advanced transfers — all in one view, sorted newest first.',action:'Review the ledger table',highlight:null},
+    {title:'Check the Portfolio Snapshot',desc:'The Portfolio Snapshot card shows current balances across all wallets — amount, holds, withdrawable, and USD fiat value. This is your end-of-day reconciliation baseline.',action:'Review Portfolio Snapshot — note total USD value',highlight:null},
+    {title:'Export the Report',desc:'Click "Export CSV" to download a spreadsheet-ready reconciliation file, or "Export JSON" for a structured file matching the API response format. Both include all transactions for the portfolio.',action:'Export CSV or Export JSON → file downloads',highlight:null}
+  ]}
+  ,{id:'entitlements',title:'User Access & Approval Policies',description:'Configure team roles, API key scopes, and consensus approval policies for secure institutional operations.',steps:[
+    {title:'View the Entity',desc:'Click the Entity node in the left sidebar (Acme Prime). Entity-level configuration — users and API keys — lives here, above the portfolio level.',action:'Click Acme Prime entity in sidebar',highlight:'#tree'},
+    {title:'Review Team Members',desc:'Click the Users tab. The seeded team has an Administrator (entity-level), an Initiator and Approver (portfolio-level, for initiating and approving transactions), and a Viewer.',action:'Entity → Users tab',highlight:null},
+    {title:'Review API Keys',desc:'Click the API Keys tab. Three keys are pre-configured: Reporting Key (VIEW only), Trading Bot (VIEW+TRADE), Treasury System (VIEW+TRANSFER). The active key controls what operations are permitted.',action:'Entity → API Keys tab',highlight:null},
+    {title:'Simulate Scope Restriction',desc:'The Reporting Key is currently active — it only has VIEW permission. Try going to a wallet and placing an order. You\'ll get a 403 scope error because the active key lacks TRADE permission.',action:'Set Active → Reporting Key → try placing an order → see 403 error',highlight:null},
+    {title:'Switch to Trading Key',desc:'Go back to Entity → API Keys and click "Set Active" on the Trading Bot key (VIEW+TRADE). Now orders are permitted but transfers (withdrawals) are still blocked.',action:'Set Active on Trading Bot → try an order → succeeds',highlight:null},
+    {title:'Configure Approval Policy',desc:'Select a portfolio and click the Policy tab. Review the transfer tiers: under $10k auto-approves, $10k-$1M needs 2 approvers, above $10M needs video verification. Adjust the thresholds.',action:'Portfolio → Policy tab → review tiers',highlight:null},
+    {title:'Test Approval Preview',desc:'Enter a transfer amount in the Approval Preview card and click Check. The simulator shows which tier applies, how many approvers are required, and whether video verification is needed.',action:'Approval Preview → enter 500000 → Check → see tier result',highlight:null}
+  ]}
+];
+
+function toggleGuide(){
+  var panel=document.getElementById('guide-panel');
+  if(!panel)return;
+  GUIDE.open=!GUIDE.open;
+  if(GUIDE.open){panel.classList.add('open');renderGuide();}
+  else panel.classList.remove('open');
+}
+function startScenario(idx){
+  GUIDE.scenarioIdx=idx;GUIDE.stepIdx=0;
+  renderGuide();
+}
+function guideNext(){
+  var s=GUIDE_SCENARIOS[GUIDE.scenarioIdx];
+  if(!s)return;
+  if(GUIDE.stepIdx>=s.steps.length-1){closeGuide();return;}
+  GUIDE.stepIdx++;
+  renderGuide();
+  var step=s.steps[GUIDE.stepIdx];
+  if(step.highlight){var el=document.querySelector(step.highlight);if(el)el.scrollIntoView({behavior:'smooth',block:'nearest'});}
+}
+function guidePrev(){
+  if(GUIDE.stepIdx>0)GUIDE.stepIdx--;
+  renderGuide();
+}
+function closeGuide(){
+  GUIDE.scenarioIdx=-1;GUIDE.stepIdx=0;
+  renderGuide();
+}
+function renderGuide(){
+  var body=document.getElementById('guide-body');
+  if(!body)return;
+  // remove all existing highlights
+  document.querySelectorAll('.guide-highlight').forEach(function(el){el.classList.remove('guide-highlight');});
+  if(GUIDE.scenarioIdx===-1){
+    // scenario picker
+    var h='<p style="font-size:12px;color:var(--muted);margin-bottom:12px">Choose a scenario to walk through:</p>';
+    GUIDE_SCENARIOS.forEach(function(sc,i){
+      h+='<div class="scenario-card" onclick="startScenario('+i+')">'+
+        '<h4>'+esc(sc.title)+'</h4>'+
+        '<p>'+esc(sc.description)+'</p>'+
+        '</div>';
+    });
+    body.innerHTML=h;
+  }else{
+    var sc=GUIDE_SCENARIOS[GUIDE.scenarioIdx];
+    var step=sc.steps[GUIDE.stepIdx];
+    var total=sc.steps.length;
+    var isLast=GUIDE.stepIdx===total-1;
+    // highlight
+    if(step.highlight){
+      var hel=document.querySelector(step.highlight);
+      if(hel){hel.classList.add('guide-highlight');hel.scrollIntoView({behavior:'smooth',block:'nearest'});}
+    }
+    var h='<div class="guide-step-counter">'+esc(sc.title)+' &mdash; Step '+(GUIDE.stepIdx+1)+' of '+total+'</div>'+
+      '<div class="guide-step-title">'+esc(step.title)+'</div>'+
+      '<p class="guide-step-desc">'+esc(step.desc)+'</p>'+
+      '<div class="guide-step-action">'+esc(step.action)+'</div>'+
+      '<div class="guide-btns">'+
+      '<button class="btn small secondary" onclick="guidePrev()" '+(GUIDE.stepIdx===0?'disabled':'')+'>&#8592; Prev</button>'+
+      '<button class="btn small secondary" onclick="closeGuide()" style="flex:none">&#10005; Scenarios</button>'+
+      '<button class="btn small" onclick="guideNext()">'+(isLast?'Finish &#127881;':'Next &#8594;')+'</button>'+
+      '</div>';
+    body.innerHTML=h;
+  }
+}
+
 /* ============================== init ============================== */
 seedState();
 renderAll();
+updateKeyIndicator();
 </script>
+<button class="guide-fab" onclick="toggleGuide()">&#129517; Walkthrough</button>
+<div class="guide-panel" id="guide-panel">
+  <div class="guide-header">
+    <h3>API Walkthrough Guide</h3>
+    <button onclick="toggleGuide()" style="background:none;border:none;color:var(--faint);cursor:pointer;font-size:16px">&#10005;</button>
+  </div>
+  <div class="guide-body" id="guide-body"></div>
+</div>
 </body>
 </html>
